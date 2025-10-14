@@ -1,0 +1,110 @@
+name: Sync Plugins to Public Repo
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/core/**'
+      - 'packages/plugin-express/**'
+      - 'packages/plugin-nextjs/**'
+      - '.github/workflows/publish-plugins.yml'
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: 'Custom commit message'
+        required: false
+        default: 'Sync plugins from private repo'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout private repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: private
+
+      - name: Checkout public repo
+        uses: actions/checkout@v4
+        with:
+          repository: Lattice-Black/lattice-plugins
+          token: ${{ secrets.PUBLIC_REPO_TOKEN }}
+          path: public
+
+      - name: Sync plugin packages
+        run: |
+          # Copy core package
+          rm -rf public/packages/core/src
+          rsync -av --delete \
+            --exclude 'node_modules' \
+            --exclude 'dist' \
+            --exclude '.turbo' \
+            --exclude '*.log' \
+            private/packages/core/ public/packages/core/
+
+          # Copy plugin-express
+          rm -rf public/packages/plugin-express/src
+          rsync -av --delete \
+            --exclude 'node_modules' \
+            --exclude 'dist' \
+            --exclude '.turbo' \
+            --exclude '*.log' \
+            private/packages/plugin-express/ public/packages/plugin-express/
+
+          # Copy plugin-nextjs
+          rm -rf public/packages/plugin-nextjs/src
+          rsync -av --delete \
+            --exclude 'node_modules' \
+            --exclude 'dist' \
+            --exclude '.turbo' \
+            --exclude '*.log' \
+            private/packages/plugin-nextjs/ public/packages/plugin-nextjs/
+
+          # Copy GitHub workflow for publishing
+          mkdir -p public/.github/workflows
+          cp private/.github/workflows/publish-plugins.yml public/.github/workflows/
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          cd public
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes to sync"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected:"
+            git status --short
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          cd public
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add -A
+
+          # Use custom commit message if provided, otherwise use last commit from private repo
+          if [ -n "${{ github.event.inputs.commit_message }}" ]; then
+            COMMIT_MSG="${{ github.event.inputs.commit_message }}"
+          else
+            cd ../private
+            LAST_COMMIT=$(git log -1 --pretty=%B | head -n 1)
+            COMMIT_MSG="Sync plugins: $LAST_COMMIT"
+          fi
+
+          cd ../public
+          git commit -m "$COMMIT_MSG"
+          git push origin main
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.check_changes.outputs.has_changes }}" == "true" ]; then
+            echo "✅ Successfully synced plugins to public repository"
+            echo "🌐 View at: https://github.com/Lattice-Black/lattice-plugins"
+          else
+            echo "✓ No changes to sync"
+          fi
