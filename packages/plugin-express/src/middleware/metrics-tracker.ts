@@ -35,7 +35,8 @@ export class MetricsTracker {
         const responseTime = Date.now() - startTime;
 
         // Extract caller service from distributed tracing header
-        const callerServiceName = req.get(HTTP_HEADERS.ORIGIN_SERVICE) || req.get('X-Origin-Service');
+        const headerValue = req.get(HTTP_HEADERS.ORIGIN_SERVICE) || req.get('X-Origin-Service');
+        const callerServiceName = Array.isArray(headerValue) ? headerValue[0] : headerValue;
 
         const metric: RequestMetrics = {
           method: req.method,
