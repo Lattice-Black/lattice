@@ -52,7 +52,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Caryyon/lattice.git",
+    "url": "https://github.com/Lattice-Black/lattice-plugins.git",
     "directory": "packages/plugin-nextjs"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/Lattice-Black/lattice-plugins/issues"
+  },
+  "homepage": "https://github.com/Lattice-Black/lattice-plugins/tree/main/packages/plugin-nextjs#readme"
 }
