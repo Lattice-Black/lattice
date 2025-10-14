@@ -176,5 +176,5 @@ This package ONLY works with Node.js runtime. If you're using Edge runtime for s
 If you're still experiencing issues:
 
 1. Check the [USER_GUIDE.md](./USER_GUIDE.md) for detailed setup instructions
-2. Open an issue on [GitHub](https://github.com/Caryyon/lattice/issues)
+2. Open an issue on [GitHub](https://github.com/Lattice-Black/lattice-plugins/issues)
 3. Include your Next.js version, node version, and the full error message

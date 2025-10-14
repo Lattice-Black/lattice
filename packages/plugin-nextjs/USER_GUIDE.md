@@ -168,5 +168,5 @@ my-nextjs-app/
 ## Support
 
 For issues, questions, or contributions:
-- GitHub: https://github.com/Caryyon/lattice
+- GitHub: https://github.com/Lattice-Black/lattice-plugins
 - Package: https://www.npmjs.com/package/@lattice.black/plugin-nextjs
