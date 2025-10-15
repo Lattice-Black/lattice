@@ -7,7 +7,7 @@ export async function register() {
     const lattice = new LatticeNextPlugin({
       serviceName: 'demo-nextjs-app',
       environment: 'development',
-      apiEndpoint: 'http://localhost:3000/api/v1',
+      apiEndpoint: 'http://localhost:8100/api/v1',
       enabled: true,
       autoSubmit: true,
       onAnalyzed: (metadata) => {

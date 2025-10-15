@@ -71,7 +71,7 @@ app.get('/health', (req, res) => {
 const lattice = new LatticePlugin({
   serviceName: 'order-service',
   environment: 'development',
-  apiEndpoint: 'http://localhost:3000/api/v1',
+  apiEndpoint: 'http://localhost:8100/api/v1',
   enabled: true,
   autoSubmit: true,
   onAnalyzed: (metadata) => {
@@ -96,7 +96,7 @@ const lattice = new LatticePlugin({
     await lattice.analyze(app);
 
     // Start server
-    const PORT = 3002;
+    const PORT = 8102;
     app.listen(PORT, () => {
       console.log(`\n🚀 Order Service running on http://localhost:${PORT}`);
       console.log(`\nAvailable routes:`);

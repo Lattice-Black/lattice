@@ -10,7 +10,7 @@ app.use(express.json());
 const lattice = new LatticePlugin({
   serviceName: 'demo-express-app',
   environment: 'development',
-  apiEndpoint: 'http://localhost:3000/api/v1',
+  apiEndpoint: 'http://localhost:8100/api/v1',
   apiKey: 'lattice_584d027d755c2d7a79c2fb84d9274fc9ec961d78742b902c',
   enabled: true,
   autoSubmit: true,
@@ -53,7 +53,7 @@ app.get('/users/:id', (req, res) => {
 // New route that calls the order-service
 app.get('/users/:id/orders', async (req, res) => {
   try {
-    const response = await fetch(`http://localhost:3002/orders/user/${req.params.id}`);
+    const response = await fetch(`http://localhost:8102/orders/user/${req.params.id}`);
     const orders = await response.json();
     res.json({
       userId: req.params.id,
@@ -93,7 +93,7 @@ app.get('/posts/:id', (req, res) => {
     await lattice.analyze(app);
 
     // Start server
-    const PORT = 3001;
+    const PORT = 8101;
     app.listen(PORT, () => {
       console.log(`\n🚀 Demo Express app running on http://localhost:${PORT}`);
       console.log(`\nAvailable routes:`);
