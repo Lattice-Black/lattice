@@ -18,26 +18,14 @@ export function initLogger(config: LoggerConfig): Logger {
     return logger // Already initialized
   }
 
-  const isProduction = config.environment === 'production'
-
   logger = pino({
     level: config.level,
     base: {
       service: config.service,
       env: config.environment,
     },
-    // Production: JSON output for log aggregation
-    // Development: Pretty-print for readability
-    transport: isProduction
-      ? undefined
-      : {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'HH:MM:ss Z',
-            ignore: 'pid,hostname',
-          },
-        },
+    // Don't use pino-pretty in Next.js - it causes worker thread issues
+    // Regular JSON output is fine for development
     // Format timestamps in ISO format
     timestamp: () => `,"time":"${new Date().toISOString()}"`,
   })

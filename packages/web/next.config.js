@@ -11,6 +11,8 @@ const nextConfig = {
   serverComponentsExternalPackages: [
     'pino',
     'pino-pretty',
+    'thread-stream',
+    'real-require',
   ],
 }
 
