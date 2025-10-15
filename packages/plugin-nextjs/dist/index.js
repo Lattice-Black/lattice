@@ -2,6 +2,10 @@ import { glob } from 'glob';
 import path from 'node:path';
 import fs from 'node:fs';
 import { ServiceStatus, HttpMethod, DependencyType, generateId, } from '@lattice.black/core';
+// Re-export error capture utilities
+export { initLatticeMonitoring, captureError, addBreadcrumb, getBreadcrumbs, clearBreadcrumbs, } from './client/browser-sdk';
+export { default as GlobalError } from './error-boundary/global-error';
+export { default as Error } from './error-boundary/error';
 export class LatticeNextPlugin {
     constructor(config) {
         this.config = {
@@ -184,3 +188,4 @@ export class LatticeNextPlugin {
         }
     }
 }
+//# sourceMappingURL=index.js.map

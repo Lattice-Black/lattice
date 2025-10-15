@@ -1,0 +1,734 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lattice Error Ingestion API",
+    "version": "2.0.0",
+    "description": "API endpoints for capturing and managing error events from monitored services"
+  },
+  "servers": [
+    {
+      "url": "https://api.lattice.black/v1",
+      "description": "Production API"
+    }
+  ],
+  "paths": {
+    "/errors": {
+      "post": {
+        "summary": "Ingest error event",
+        "description": "Capture an error event from a monitored service. Automatically aggregates identical errors based on fingerprint.",
+        "operationId": "ingestError",
+        "tags": ["Error Ingestion"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorEvent"
+              },
+              "examples": {
+                "clientError": {
+                  "summary": "Browser-side TypeError",
+                  "value": {
+                    "service_id": "web-app-prod",
+                    "environment": "production",
+                    "error_type": "TypeError",
+                    "message": "Cannot read property 'map' of undefined",
+                    "stack_trace": [
+                      {
+                        "filename": "UserList.tsx",
+                        "line_number": 42,
+                        "column_number": 15,
+                        "function_name": "UserList.render"
+                      },
+                      {
+                        "filename": "react-dom.production.min.js",
+                        "line_number": 1234,
+                        "column_number": 56,
+                        "function_name": "renderComponent"
+                      }
+                    ],
+                    "context": {
+                      "user_id": "user_123",
+                      "page_url": "https://example.com/users",
+                      "browser": "Chrome 119"
+                    },
+                    "session_id": "01HF8QZWXYZ123456789ABCDEF"
+                  }
+                },
+                "serverError": {
+                  "summary": "Server-side database error",
+                  "value": {
+                    "service_id": "api-server-prod",
+                    "environment": "production",
+                    "error_type": "DatabaseConnectionError",
+                    "message": "Connection pool exhausted: max 20 connections",
+                    "stack_trace": [
+                      {
+                        "filename": "database.ts",
+                        "line_number": 156,
+                        "column_number": 8,
+                        "function_name": "getConnection"
+                      },
+                      {
+                        "filename": "user-service.ts",
+                        "line_number": 89,
+                        "column_number": 22,
+                        "function_name": "fetchUserById"
+                      }
+                    ],
+                    "context": {
+                      "request_id": "req_abc123",
+                      "endpoint": "/api/users/456",
+                      "method": "GET"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Error event ingested successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Unique error event ID"
+                    },
+                    "fingerprint": {
+                      "type": "string",
+                      "description": "Error fingerprint for aggregation"
+                    },
+                    "is_new": {
+                      "type": "boolean",
+                      "description": "Whether this is the first occurrence"
+                    },
+                    "occurrence_count": {
+                      "type": "integer",
+                      "description": "Total occurrences of this error"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "01HF8R1234567890ABCDEFGHIJ",
+                  "fingerprint": "a3b9c8d7e6f5",
+                  "is_new": false,
+                  "occurrence_count": 15
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "validation_error",
+                  "message": "Missing required field: error_type",
+                  "details": {
+                    "field": "error_type",
+                    "constraint": "required"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List error events",
+        "description": "Retrieve paginated list of error events with filtering and search capabilities.",
+        "operationId": "listErrors",
+        "tags": ["Error Query"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "service_id",
+            "in": "query",
+            "description": "Filter by service ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "description": "Filter by environment",
+            "schema": {
+              "type": "string",
+              "enum": ["development", "staging", "production"]
+            }
+          },
+          {
+            "name": "error_type",
+            "in": "query",
+            "description": "Filter by error type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolved",
+            "in": "query",
+            "description": "Filter by resolution status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search error messages and stack traces",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "Filter errors after this timestamp (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "Filter errors before this timestamp (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort order",
+            "schema": {
+              "type": "string",
+              "enum": ["timestamp_desc", "timestamp_asc", "count_desc", "count_asc"],
+              "default": "timestamp_desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of error events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ErrorEventSummary"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of matching errors"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/errors/{id}": {
+      "get": {
+        "summary": "Get error details",
+        "description": "Retrieve complete details for a specific error event including full stack trace and context.",
+        "operationId": "getError",
+        "tags": ["Error Query"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Error event ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Error event details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEventDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update error status",
+        "description": "Mark error as resolved or ignored.",
+        "operationId": "updateError",
+        "tags": ["Error Management"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Error event ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resolved": {
+                    "type": "boolean",
+                    "description": "Mark as resolved"
+                  },
+                  "ignored": {
+                    "type": "boolean",
+                    "description": "Mark as ignored"
+                  }
+                }
+              },
+              "example": {
+                "resolved": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Error updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "resolved": {
+                      "type": "boolean"
+                    },
+                    "ignored": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error not found"
+          }
+        }
+      }
+    },
+    "/errors/stats": {
+      "get": {
+        "summary": "Get error statistics",
+        "description": "Retrieve aggregated error statistics for time-series visualization.",
+        "operationId": "getErrorStats",
+        "tags": ["Error Query"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "service_id",
+            "in": "query",
+            "description": "Filter by service ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "description": "Filter by environment",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": true,
+            "description": "Start of time range (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": true,
+            "description": "End of time range (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "description": "Time bucket interval",
+            "schema": {
+              "type": "string",
+              "enum": ["1m", "5m", "10m", "1h", "1d"],
+              "default": "5m"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Error statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "buckets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "error_count": {
+                            "type": "integer"
+                          },
+                          "error_rate": {
+                            "type": "number",
+                            "description": "Errors per minute"
+                          }
+                        }
+                      }
+                    },
+                    "total_errors": {
+                      "type": "integer"
+                    },
+                    "unique_errors": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "buckets": [
+                    {
+                      "timestamp": "2025-10-14T10:00:00Z",
+                      "error_count": 45,
+                      "error_rate": 9.0
+                    },
+                    {
+                      "timestamp": "2025-10-14T10:05:00Z",
+                      "error_count": 38,
+                      "error_rate": 7.6
+                    }
+                  ],
+                  "total_errors": 983,
+                  "unique_errors": 23
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Lattice-Api-Key"
+      }
+    },
+    "schemas": {
+      "ErrorEvent": {
+        "type": "object",
+        "required": ["service_id", "environment", "error_type", "message", "stack_trace"],
+        "properties": {
+          "service_id": {
+            "type": "string",
+            "description": "Identifier of the service reporting the error"
+          },
+          "environment": {
+            "type": "string",
+            "enum": ["development", "staging", "production"],
+            "description": "Environment where error occurred"
+          },
+          "error_type": {
+            "type": "string",
+            "description": "Error class or type name",
+            "example": "TypeError"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message (will be sanitized)",
+            "example": "Cannot read property 'map' of undefined"
+          },
+          "stack_trace": {
+            "type": "array",
+            "description": "Array of stack frames",
+            "items": {
+              "$ref": "#/components/schemas/StackFrame"
+            },
+            "minItems": 1
+          },
+          "context": {
+            "type": "object",
+            "description": "Additional error context (user info, request data, etc.)",
+            "additionalProperties": true
+          },
+          "session_id": {
+            "type": "string",
+            "description": "Session identifier for breadcrumb correlation"
+          }
+        }
+      },
+      "StackFrame": {
+        "type": "object",
+        "required": ["filename", "line_number"],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Source file name",
+            "example": "UserList.tsx"
+          },
+          "line_number": {
+            "type": "integer",
+            "description": "Line number in source file",
+            "example": 42
+          },
+          "column_number": {
+            "type": "integer",
+            "description": "Column number in source file",
+            "example": 15
+          },
+          "function_name": {
+            "type": "string",
+            "description": "Function or method name",
+            "example": "UserList.render"
+          },
+          "source_context": {
+            "type": "object",
+            "description": "Lines of code surrounding the error",
+            "properties": {
+              "pre": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "line": {
+                "type": "string"
+              },
+              "post": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErrorEventSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "service_id": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "error_type": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "occurrence_count": {
+            "type": "integer"
+          },
+          "first_seen": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolved": {
+            "type": "boolean"
+          },
+          "ignored": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ErrorEventDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorEventSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "stack_trace": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/StackFrame"
+                }
+              },
+              "context": {
+                "type": "object"
+              },
+              "session_id": {
+                "type": "string"
+              },
+              "breadcrumbs": {
+                "type": "array",
+                "description": "Recent breadcrumbs before error (if session_id provided)",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error", "message"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "details": {
+            "type": "object",
+            "description": "Additional error details"
+          }
+        }
+      }
+    }
+  }
+}

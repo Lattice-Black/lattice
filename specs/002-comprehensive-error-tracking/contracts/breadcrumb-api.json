@@ -1,0 +1,525 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lattice Breadcrumb Tracking API",
+    "version": "2.0.0",
+    "description": "API endpoints for capturing and querying user action breadcrumbs that provide context before errors"
+  },
+  "servers": [
+    {
+      "url": "https://api.lattice.black/v1",
+      "description": "Production API"
+    }
+  ],
+  "paths": {
+    "/breadcrumbs": {
+      "post": {
+        "summary": "Record breadcrumb",
+        "description": "Capture a user action or system event as a breadcrumb for error context.",
+        "operationId": "recordBreadcrumb",
+        "tags": ["Breadcrumb Ingestion"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Breadcrumb"
+              },
+              "examples": {
+                "navigation": {
+                  "summary": "User navigation event",
+                  "value": {
+                    "session_id": "01HF8QZWXYZ123456789ABCDEF",
+                    "service_id": "web-app-prod",
+                    "category": "navigation",
+                    "level": "info",
+                    "message": "User navigated to /dashboard/users",
+                    "data": {
+                      "from": "/dashboard",
+                      "to": "/dashboard/users",
+                      "referrer": "https://example.com/dashboard"
+                    }
+                  }
+                },
+                "userAction": {
+                  "summary": "Button click event",
+                  "value": {
+                    "session_id": "01HF8QZWXYZ123456789ABCDEF",
+                    "service_id": "web-app-prod",
+                    "category": "user_action",
+                    "level": "info",
+                    "message": "Button clicked: Export Report",
+                    "data": {
+                      "button_id": "export-btn",
+                      "button_text": "Export Report",
+                      "element_path": "div.dashboard > div.actions > button#export-btn"
+                    }
+                  }
+                },
+                "httpRequest": {
+                  "summary": "HTTP request breadcrumb",
+                  "value": {
+                    "session_id": "01HF8QZWXYZ123456789ABCDEF",
+                    "service_id": "web-app-prod",
+                    "category": "http",
+                    "level": "info",
+                    "message": "POST /api/reports/generate",
+                    "data": {
+                      "url": "https://api.example.com/api/reports/generate",
+                      "method": "POST",
+                      "status": 200,
+                      "duration_ms": 1250
+                    }
+                  }
+                },
+                "console": {
+                  "summary": "Console log breadcrumb",
+                  "value": {
+                    "session_id": "01HF8QZWXYZ123456789ABCDEF",
+                    "service_id": "web-app-prod",
+                    "category": "console",
+                    "level": "warning",
+                    "message": "API rate limit approaching threshold",
+                    "data": {
+                      "remaining_requests": 50,
+                      "reset_time": "2025-10-14T11:00:00Z"
+                    }
+                  }
+                },
+                "stateChange": {
+                  "summary": "Application state change",
+                  "value": {
+                    "session_id": "01HF8QZWXYZ123456789ABCDEF",
+                    "service_id": "web-app-prod",
+                    "category": "state_change",
+                    "level": "info",
+                    "message": "User authentication state changed",
+                    "data": {
+                      "previous_state": "unauthenticated",
+                      "new_state": "authenticated",
+                      "user_id": "user_123"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Breadcrumb recorded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Unique breadcrumb ID"
+                    },
+                    "session_breadcrumb_count": {
+                      "type": "integer",
+                      "description": "Total breadcrumbs for this session"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "01HF8RABC123456789DEFGHIJK",
+                  "session_breadcrumb_count": 15
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        }
+      },
+      "get": {
+        "summary": "List breadcrumbs",
+        "description": "Retrieve breadcrumbs for a specific session, typically for error context.",
+        "operationId": "listBreadcrumbs",
+        "tags": ["Breadcrumb Query"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": true,
+            "description": "Session identifier",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by breadcrumb category",
+            "schema": {
+              "type": "string",
+              "enum": ["navigation", "user_action", "http", "console", "state_change", "custom"]
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "description": "Filter by severity level",
+            "schema": {
+              "type": "string",
+              "enum": ["debug", "info", "warning", "error"]
+            }
+          },
+          {
+            "name": "before_timestamp",
+            "in": "query",
+            "description": "Get breadcrumbs before this timestamp (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of breadcrumbs (max 100)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of breadcrumbs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "breadcrumbs": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BreadcrumbDetail"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total breadcrumbs in session"
+                    },
+                    "session": {
+                      "type": "object",
+                      "description": "Session metadata",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "started_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "duration_seconds": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "breadcrumbs": [
+                    {
+                      "id": "01HF8R111",
+                      "category": "navigation",
+                      "level": "info",
+                      "message": "User navigated to /dashboard",
+                      "data": {
+                        "from": "/login",
+                        "to": "/dashboard"
+                      },
+                      "timestamp": "2025-10-14T10:10:00Z"
+                    },
+                    {
+                      "id": "01HF8R222",
+                      "category": "user_action",
+                      "level": "info",
+                      "message": "Button clicked: Generate Report",
+                      "data": {
+                        "button_id": "generate-btn"
+                      },
+                      "timestamp": "2025-10-14T10:12:30Z"
+                    },
+                    {
+                      "id": "01HF8R333",
+                      "category": "http",
+                      "level": "error",
+                      "message": "POST /api/reports - 500 error",
+                      "data": {
+                        "status": 500,
+                        "duration_ms": 5000
+                      },
+                      "timestamp": "2025-10-14T10:12:35Z"
+                    }
+                  ],
+                  "total": 3,
+                  "session": {
+                    "id": "01HF8QZWXYZ123456789ABCDEF",
+                    "started_at": "2025-10-14T10:08:00Z",
+                    "duration_seconds": 285
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        }
+      }
+    },
+    "/sessions": {
+      "post": {
+        "summary": "Create session",
+        "description": "Initialize a new tracking session for breadcrumb correlation.",
+        "operationId": "createSession",
+        "tags": ["Session Management"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreate"
+              },
+              "example": {
+                "service_id": "web-app-prod",
+                "user_id": "user_123",
+                "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+                "metadata": {
+                  "browser": "Chrome",
+                  "os": "macOS",
+                  "screen_resolution": "1920x1080"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Unique session identifier (ULID)"
+                    },
+                    "started_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "01HF8QZWXYZ123456789ABCDEF",
+                  "started_at": "2025-10-14T10:08:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body"
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        }
+      }
+    },
+    "/sessions/{id}/end": {
+      "post": {
+        "summary": "End session",
+        "description": "Explicitly mark a session as ended.",
+        "operationId": "endSession",
+        "tags": ["Session Management"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Session ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session ended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "ended_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "duration_seconds": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Lattice-Api-Key"
+      }
+    },
+    "schemas": {
+      "Breadcrumb": {
+        "type": "object",
+        "required": ["session_id", "service_id", "category", "message"],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "description": "Session identifier this breadcrumb belongs to"
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Service that captured the breadcrumb"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["navigation", "user_action", "http", "console", "state_change", "custom"],
+            "description": "Breadcrumb category"
+          },
+          "level": {
+            "type": "string",
+            "enum": ["debug", "info", "warning", "error"],
+            "default": "info",
+            "description": "Severity level"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable description of the event",
+            "minLength": 1,
+            "example": "User navigated to /dashboard"
+          },
+          "data": {
+            "type": "object",
+            "description": "Additional breadcrumb data",
+            "additionalProperties": true
+          }
+        }
+      },
+      "BreadcrumbDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Breadcrumb"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique breadcrumb ID"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When breadcrumb was captured"
+              }
+            }
+          }
+        ]
+      },
+      "SessionCreate": {
+        "type": "object",
+        "required": ["service_id"],
+        "properties": {
+          "service_id": {
+            "type": "string",
+            "description": "Service where session is occurring"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "User identifier (if authenticated)"
+          },
+          "user_agent": {
+            "type": "string",
+            "description": "Browser/client user agent"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional session metadata",
+            "additionalProperties": true
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error", "message"],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,12 +1,20 @@
 /**
- * Lattice Core Types - Unified data model for service discovery
+ * Lattice Core Types - Unified data model for service discovery and error tracking
  */
 
+// Service Discovery Types
 export * from './service';
 export * from './route';
 export * from './dependency';
 export * from './connection';
 export * from './plugin';
+
+// Error Tracking Types
+export * from './error';
+export * from './performance';
+export * from './breadcrumb';
+export * from './session';
+export * from './alert';
 
 /**
  * Service metadata submission payload

@@ -63,7 +63,7 @@ export const createApiKeysRouter = (): Router => {
       if (error && error.code !== 'PGRST116') {
         // PGRST116 is "no rows returned" error, which is fine
         console.error('Get API key error:', error);
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Internal Server Error',
           message: 'Failed to retrieve API key',
         });
@@ -71,7 +71,7 @@ export const createApiKeysRouter = (): Router => {
       }
 
       if (!apiKey) {
-        res.status(404).json({
+        return res.status(404).json({
           error: 'Not Found',
           message: 'No API key found. Please generate one.',
           hasKey: false,
@@ -80,7 +80,7 @@ export const createApiKeysRouter = (): Router => {
       }
 
       // Return masked key info (we don't store the plain key, so we can't return it)
-      res.json({
+      return res.json({
         id: apiKey.id,
         name: apiKey.name,
         createdAt: apiKey.created_at,
@@ -91,7 +91,7 @@ export const createApiKeysRouter = (): Router => {
       });
     } catch (error) {
       console.error('Get API key error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -142,7 +142,7 @@ export const createApiKeysRouter = (): Router => {
 
       if (createError || !newKeyRecord) {
         console.error('Create API key error:', createError);
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Internal Server Error',
           message: 'Failed to create new API key',
         });
@@ -150,7 +150,7 @@ export const createApiKeysRouter = (): Router => {
       }
 
       // Return the new API key (this is the ONLY time it's visible)
-      res.json({
+      return res.json({
         apiKey: newApiKey,
         maskedKey: maskApiKey(newApiKey),
         id: newKeyRecord.id,
@@ -160,7 +160,7 @@ export const createApiKeysRouter = (): Router => {
       });
     } catch (error) {
       console.error('Refresh API key error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });

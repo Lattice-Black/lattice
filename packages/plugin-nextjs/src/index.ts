@@ -25,6 +25,17 @@ export interface LatticeNextConfig {
   onError?: (error: Error) => void;
 }
 
+// Re-export error capture utilities
+export {
+  initLatticeMonitoring,
+  captureError,
+  addBreadcrumb,
+  getBreadcrumbs,
+  clearBreadcrumbs,
+} from './client/browser-sdk';
+export { default as GlobalError } from './error-boundary/global-error';
+export { default as Error } from './error-boundary/error';
+
 export class LatticeNextPlugin {
   private config: Required<LatticeNextConfig>;
 

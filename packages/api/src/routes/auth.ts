@@ -12,7 +12,7 @@ export const createAuthRouter = (): Router => {
   /**
    * POST /auth/signup - Register a new user
    */
-  router.post('/signup', async (req: Request, res: Response): Promise<void> => {
+  router.post('/signup', async (req: Request, res: Response) => {
     try {
       const { email, password, fullName } = req.body;
 
@@ -44,7 +44,7 @@ export const createAuthRouter = (): Router => {
       }
 
       if (!data.user) {
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Internal Server Error',
           message: 'Failed to create user',
         });
@@ -59,7 +59,7 @@ export const createAuthRouter = (): Router => {
         [data.user.id, email, fullName || null]
       );
 
-      res.status(201).json({
+      return res.status(201).json({
         user: {
           id: data.user.id,
           email: data.user.email,
@@ -69,7 +69,7 @@ export const createAuthRouter = (): Router => {
       });
     } catch (error) {
       console.error('Signup error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: 'Failed to create user',
       });
@@ -79,7 +79,7 @@ export const createAuthRouter = (): Router => {
   /**
    * POST /auth/login - Login with email and password
    */
-  router.post('/login', async (req: Request, res: Response): Promise<void> => {
+  router.post('/login', async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
 
@@ -104,7 +104,7 @@ export const createAuthRouter = (): Router => {
         return;
       }
 
-      res.json({
+      return res.json({
         user: {
           id: data.user.id,
           email: data.user.email,
@@ -113,7 +113,7 @@ export const createAuthRouter = (): Router => {
       });
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: 'Failed to authenticate',
       });
@@ -123,24 +123,24 @@ export const createAuthRouter = (): Router => {
   /**
    * POST /auth/logout - Logout current user
    */
-  router.post('/logout', authenticateSupabase, async (_req: Request, res: Response): Promise<void> => {
+  router.post('/logout', authenticateSupabase, async (_req: Request, res: Response) => {
     try {
       const { error } = await supabase.auth.signOut();
 
       if (error) {
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Logout Failed',
           message: error.message,
         });
         return;
       }
 
-      res.json({
+      return res.json({
         message: 'Successfully logged out',
       });
     } catch (error) {
       console.error('Logout error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: 'Failed to logout',
       });
@@ -150,7 +150,7 @@ export const createAuthRouter = (): Router => {
   /**
    * GET /auth/me - Get current user info
    */
-  router.get('/me', authenticateSupabase, async (req: Request, res: Response): Promise<void> => {
+  router.get('/me', authenticateSupabase, async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthenticatedRequest;
 
@@ -169,19 +169,19 @@ export const createAuthRouter = (): Router => {
       );
 
       if (result.rows.length === 0) {
-        res.status(404).json({
+        return res.status(404).json({
           error: 'Not Found',
           message: 'User profile not found',
         });
         return;
       }
 
-      res.json({
+      return res.json({
         user: result.rows[0],
       });
     } catch (error) {
       console.error('Get user error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: 'Failed to get user info',
       });
@@ -191,7 +191,7 @@ export const createAuthRouter = (): Router => {
   /**
    * POST /auth/refresh - Refresh access token
    */
-  router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
+  router.post('/refresh', async (req: Request, res: Response) => {
     try {
       const { refreshToken } = req.body;
 
@@ -215,12 +215,12 @@ export const createAuthRouter = (): Router => {
         return;
       }
 
-      res.json({
+      return res.json({
         session: data.session,
       });
     } catch (error) {
       console.error('Refresh error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: 'Failed to refresh token',
       });

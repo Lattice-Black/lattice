@@ -51,7 +51,7 @@ export const createMetricsRouter = (): Router => {
 
       const insertedCount = await metricsService.insertMetrics(serviceName, userId, metrics);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         inserted: insertedCount,
       });
@@ -59,14 +59,14 @@ export const createMetricsRouter = (): Router => {
       console.error('Metrics ingestion error:', error);
 
       if (error instanceof Error && error.message.includes('Service not found')) {
-        res.status(404).json({
+        return res.status(404).json({
           error: 'Service not found',
           message: error.message,
         });
         return;
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -92,13 +92,13 @@ export const createMetricsRouter = (): Router => {
       const { serviceId } = req.query;
       const stats = await metricsService.getServiceStats(userId, serviceId as string | undefined);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         stats,
       });
     } catch (error) {
       console.error('Stats retrieval error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -123,13 +123,13 @@ export const createMetricsRouter = (): Router => {
       const userId = req.user.id;
       const connections = await metricsService.getServiceConnections(userId);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         connections,
       });
     } catch (error) {
       console.error('Connections retrieval error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -170,7 +170,7 @@ export const createMetricsRouter = (): Router => {
         limitNum
       );
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         serviceName,
         count: metrics.length,
@@ -178,7 +178,7 @@ export const createMetricsRouter = (): Router => {
       });
     } catch (error) {
       console.error('Recent metrics retrieval error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });

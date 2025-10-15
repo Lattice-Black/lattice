@@ -16,7 +16,7 @@ export const createWebhooksRouter = (): Router => {
    */
   router.post(
     '/stripe',
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: Request, res: Response) => {
       try {
         if (!stripe) {
           res.status(503).json({
@@ -37,7 +37,7 @@ export const createWebhooksRouter = (): Router => {
         }
 
         if (!WEBHOOK_SECRET) {
-          res.status(500).json({
+          return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Webhook secret not configured',
           });
@@ -139,10 +139,10 @@ export const createWebhooksRouter = (): Router => {
         }
 
         // Return 200 to acknowledge receipt
-        res.json({ received: true });
+        return res.json({ received: true });
       } catch (error) {
         console.error('Webhook error:', error);
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Internal Server Error',
           message: 'Failed to process webhook',
         });

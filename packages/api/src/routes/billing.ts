@@ -20,7 +20,7 @@ export const createBillingRouter = (): Router => {
   router.post(
     '/checkout',
     authenticateSupabase,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthenticatedRequest;
         const { tier, successUrl, cancelUrl } = req.body;
@@ -56,12 +56,12 @@ export const createBillingRouter = (): Router => {
           cancelUrl
         );
 
-        res.json({
+        return res.json({
           url: checkoutUrl,
         });
       } catch (error) {
         console.error('Checkout error:', error);
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Internal Server Error',
           message:
             error instanceof Error ? error.message : 'Failed to create checkout session',
@@ -76,7 +76,7 @@ export const createBillingRouter = (): Router => {
   router.post(
     '/portal',
     authenticateSupabase,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthenticatedRequest;
         const { returnUrl } = req.body;
@@ -102,12 +102,12 @@ export const createBillingRouter = (): Router => {
           returnUrl
         );
 
-        res.json({
+        return res.json({
           url: portalUrl,
         });
       } catch (error) {
         console.error('Billing portal error:', error);
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Internal Server Error',
           message:
             error instanceof Error ? error.message : 'Failed to create portal session',
@@ -122,7 +122,7 @@ export const createBillingRouter = (): Router => {
   router.get(
     '/subscription',
     authenticateSupabase,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthenticatedRequest;
 
@@ -148,7 +148,7 @@ export const createBillingRouter = (): Router => {
         const tier = subscription?.tier || 'free';
         const limits = getTierLimits(tier);
 
-        res.json({
+        return res.json({
           ...subscription,
           tier,
           usage: {
@@ -169,7 +169,7 @@ export const createBillingRouter = (): Router => {
         });
       } catch (error) {
         console.error('Get subscription error:', error);
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Internal Server Error',
           message: 'Failed to get subscription status',
         });
@@ -183,7 +183,7 @@ export const createBillingRouter = (): Router => {
   router.post(
     '/cancel',
     authenticateSupabase,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthenticatedRequest;
 
@@ -197,12 +197,12 @@ export const createBillingRouter = (): Router => {
 
         await paymentService.cancelSubscription(authReq.user.id);
 
-        res.json({
+        return res.json({
           message: 'Subscription cancelled successfully',
         });
       } catch (error) {
         console.error('Cancel subscription error:', error);
-        res.status(500).json({
+        return res.status(500).json({
           error: 'Internal Server Error',
           message:
             error instanceof Error ? error.message : 'Failed to cancel subscription',

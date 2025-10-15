@@ -1,0 +1,581 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lattice Performance Monitoring API",
+    "version": "2.0.0",
+    "description": "API endpoints for capturing and querying performance metrics and traces"
+  },
+  "servers": [
+    {
+      "url": "https://api.lattice.black/v1",
+      "description": "Production API"
+    }
+  ],
+  "paths": {
+    "/performance/traces": {
+      "post": {
+        "summary": "Ingest performance trace",
+        "description": "Capture timing data for an operation (API request, database query, etc.)",
+        "operationId": "ingestTrace",
+        "tags": ["Performance Ingestion"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerformanceTrace"
+              },
+              "examples": {
+                "httpRequest": {
+                  "summary": "HTTP request trace",
+                  "value": {
+                    "service_id": "api-server-prod",
+                    "operation_name": "GET /api/users",
+                    "operation_type": "http_request",
+                    "start_time": "2025-10-14T10:15:30.000Z",
+                    "duration_ms": 245,
+                    "status_code": 200,
+                    "method": "GET",
+                    "path": "/api/users",
+                    "caller_service": "web-app-prod",
+                    "breakdown": {
+                      "sub_operations": [
+                        {
+                          "name": "database_query",
+                          "duration_ms": 120,
+                          "details": {
+                            "query": "SELECT * FROM users LIMIT 100"
+                          }
+                        },
+                        {
+                          "name": "serialization",
+                          "duration_ms": 45
+                        }
+                      ]
+                    }
+                  }
+                },
+                "databaseQuery": {
+                  "summary": "Database query trace",
+                  "value": {
+                    "service_id": "api-server-prod",
+                    "operation_name": "fetchUsersByRole",
+                    "operation_type": "db_query",
+                    "start_time": "2025-10-14T10:15:30.120Z",
+                    "duration_ms": 3500,
+                    "metadata": {
+                      "query_type": "SELECT",
+                      "table": "users",
+                      "rows_returned": 5432
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Performance trace ingested successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Unique trace ID"
+                    },
+                    "is_slow": {
+                      "type": "boolean",
+                      "description": "Whether operation exceeded performance threshold"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "01HF8R9876543210ZYXWVUTSRQ",
+                  "is_slow": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        }
+      },
+      "get": {
+        "summary": "List performance traces",
+        "description": "Retrieve paginated list of performance traces with filtering.",
+        "operationId": "listTraces",
+        "tags": ["Performance Query"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "service_id",
+            "in": "query",
+            "description": "Filter by service ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operation_type",
+            "in": "query",
+            "description": "Filter by operation type",
+            "schema": {
+              "type": "string",
+              "enum": ["http_request", "db_query", "external_call", "custom"]
+            }
+          },
+          {
+            "name": "min_duration_ms",
+            "in": "query",
+            "description": "Minimum duration (milliseconds)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "Filter traces after this timestamp (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "Filter traces before this timestamp (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of performance traces",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "traces": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PerformanceTraceSummary"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/performance/traces/{id}": {
+      "get": {
+        "summary": "Get trace details",
+        "description": "Retrieve complete details for a specific performance trace including breakdown.",
+        "operationId": "getTrace",
+        "tags": ["Performance Query"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Trace ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trace details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerformanceTraceDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Trace not found"
+          }
+        }
+      }
+    },
+    "/performance/metrics": {
+      "get": {
+        "summary": "Get performance metrics",
+        "description": "Retrieve aggregated performance metrics for visualization (avg response time, slowest operations, etc.)",
+        "operationId": "getPerformanceMetrics",
+        "tags": ["Performance Query"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "service_id",
+            "in": "query",
+            "description": "Filter by service ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": true,
+            "description": "Start of time range (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": true,
+            "description": "End of time range (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "description": "Time bucket interval",
+            "schema": {
+              "type": "string",
+              "enum": ["1m", "5m", "10m", "1h", "1d"],
+              "default": "5m"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Performance metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "buckets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "avg_duration_ms": {
+                            "type": "number"
+                          },
+                          "p50_duration_ms": {
+                            "type": "number"
+                          },
+                          "p95_duration_ms": {
+                            "type": "number"
+                          },
+                          "p99_duration_ms": {
+                            "type": "number"
+                          },
+                          "request_count": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "slowest_operations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "operation_name": {
+                            "type": "string"
+                          },
+                          "avg_duration_ms": {
+                            "type": "number"
+                          },
+                          "count": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "total_requests": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "buckets": [
+                    {
+                      "timestamp": "2025-10-14T10:00:00Z",
+                      "avg_duration_ms": 245.5,
+                      "p50_duration_ms": 180,
+                      "p95_duration_ms": 890,
+                      "p99_duration_ms": 2340,
+                      "request_count": 1250
+                    }
+                  ],
+                  "slowest_operations": [
+                    {
+                      "operation_name": "GET /api/reports/generate",
+                      "avg_duration_ms": 8500,
+                      "count": 45
+                    },
+                    {
+                      "operation_name": "POST /api/imports/bulk",
+                      "avg_duration_ms": 6200,
+                      "count": 12
+                    }
+                  ],
+                  "total_requests": 25000
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Lattice-Api-Key"
+      }
+    },
+    "schemas": {
+      "PerformanceTrace": {
+        "type": "object",
+        "required": ["service_id", "operation_name", "operation_type", "start_time", "duration_ms"],
+        "properties": {
+          "service_id": {
+            "type": "string",
+            "description": "Identifier of the service reporting the trace"
+          },
+          "operation_name": {
+            "type": "string",
+            "description": "Name or identifier of the operation",
+            "example": "GET /api/users"
+          },
+          "operation_type": {
+            "type": "string",
+            "enum": ["http_request", "db_query", "external_call", "custom"],
+            "description": "Type of operation being traced"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When operation started (ISO 8601)"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total operation duration in milliseconds"
+          },
+          "status_code": {
+            "type": "integer",
+            "description": "HTTP status code (if applicable)",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method (if applicable)",
+            "example": "GET"
+          },
+          "path": {
+            "type": "string",
+            "description": "Request path (if applicable)",
+            "example": "/api/users"
+          },
+          "user_agent": {
+            "type": "string",
+            "description": "Client user agent"
+          },
+          "caller_service": {
+            "type": "string",
+            "description": "Service that initiated this operation"
+          },
+          "breakdown": {
+            "type": "object",
+            "description": "Timing breakdown for sub-operations",
+            "properties": {
+              "sub_operations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "duration_ms": {
+                      "type": "integer"
+                    },
+                    "details": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional trace metadata",
+            "additionalProperties": true
+          },
+          "session_id": {
+            "type": "string",
+            "description": "Session identifier for correlation"
+          }
+        }
+      },
+      "PerformanceTraceSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "service_id": {
+            "type": "string"
+          },
+          "operation_name": {
+            "type": "string"
+          },
+          "operation_type": {
+            "type": "string"
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "status_code": {
+            "type": "integer"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PerformanceTraceDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PerformanceTraceSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "start_time": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "method": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "user_agent": {
+                "type": "string"
+              },
+              "caller_service": {
+                "type": "string"
+              },
+              "breakdown": {
+                "type": "object"
+              },
+              "metadata": {
+                "type": "object"
+              }
+            }
+          }
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error", "message"],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

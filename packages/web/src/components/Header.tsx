@@ -47,6 +47,30 @@ export function Header() {
                     Metrics
                   </Link>
                   <Link
+                    href="/dashboard/errors"
+                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+                  >
+                    Errors
+                  </Link>
+                  <Link
+                    href="/dashboard/performance"
+                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+                  >
+                    Performance
+                  </Link>
+                  <Link
+                    href="/dashboard/health"
+                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+                  >
+                    Health
+                  </Link>
+                  <Link
+                    href="/dashboard/alerts"
+                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+                  >
+                    Alerts
+                  </Link>
+                  <Link
                     href="/dashboard/graph"
                     className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
                   >
@@ -158,6 +182,34 @@ export function Header() {
                 className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
               >
                 Metrics
+              </Link>
+              <Link
+                href="/dashboard/errors"
+                onClick={closeMobileMenu}
+                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+              >
+                Errors
+              </Link>
+              <Link
+                href="/dashboard/performance"
+                onClick={closeMobileMenu}
+                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+              >
+                Performance
+              </Link>
+              <Link
+                href="/dashboard/health"
+                onClick={closeMobileMenu}
+                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+              >
+                Health
+              </Link>
+              <Link
+                href="/dashboard/alerts"
+                onClick={closeMobileMenu}
+                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+              >
+                Alerts
               </Link>
               <Link
                 href="/dashboard/graph"

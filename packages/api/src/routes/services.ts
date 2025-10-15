@@ -41,7 +41,7 @@ export const createServicesRouter = (): Router => {
         offset: parsedOffset,
       });
 
-      res.json({
+      return res.json({
         services: result.services,
         total: result.total,
         limit: parsedLimit || 50,
@@ -49,7 +49,7 @@ export const createServicesRouter = (): Router => {
       });
     } catch (error) {
       console.error('List services error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -90,17 +90,17 @@ export const createServicesRouter = (): Router => {
       }
 
       if (!service) {
-        res.status(404).json({
+        return res.status(404).json({
           error: 'Not Found',
           message: `Service "${id}" not found`,
         });
         return;
       }
 
-      res.json(service);
+      return res.json(service);
     } catch (error) {
       console.error('Get service error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -144,7 +144,7 @@ export const createServicesRouter = (): Router => {
       }
 
       if (!service) {
-        res.status(404).json({
+        return res.status(404).json({
           error: 'Not Found',
           message: `Service "${id}" not found`,
         });
@@ -156,7 +156,7 @@ export const createServicesRouter = (): Router => {
         offset: parsedOffset,
       });
 
-      res.json({
+      return res.json({
         metrics: result.metrics,
         stats: result.stats,
         total: result.total,
@@ -165,7 +165,7 @@ export const createServicesRouter = (): Router => {
       });
     } catch (error) {
       console.error('Get service metrics error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });

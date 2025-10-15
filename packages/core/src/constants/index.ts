@@ -56,6 +56,17 @@ export const SERVICE_STATUS = {
 } as const;
 
 /**
+ * Service health status values
+ */
+export const HEALTH_STATUS = {
+  HEALTHY: 'healthy',
+  DEGRADED: 'degraded',
+  CRITICAL: 'critical',
+} as const;
+
+export type HealthStatus = typeof HEALTH_STATUS[keyof typeof HEALTH_STATUS];
+
+/**
  * Default configuration values
  */
 export const DEFAULTS = {

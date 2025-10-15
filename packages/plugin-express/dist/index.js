@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HttpInterceptor = exports.LatticePlugin = void 0;
+exports.LatticeExpress = exports.ErrorCapture = exports.HttpInterceptor = exports.LatticePlugin = void 0;
 const tslib_1 = require("tslib");
 const core_1 = require("@lattice.black/core");
 const types_1 = require("./config/types");
@@ -10,6 +10,7 @@ const service_name_detector_1 = require("./discovery/service-name-detector");
 const api_client_1 = require("./client/api-client");
 const metrics_tracker_1 = require("./middleware/metrics-tracker");
 const http_interceptor_1 = require("./client/http-interceptor");
+const error_capture_1 = require("./middleware/error-capture");
 class LatticePlugin {
     config;
     routeAnalyzer;
@@ -20,6 +21,7 @@ class LatticePlugin {
     submitTimer = null;
     metricsTracker = null;
     httpInterceptor = null;
+    errorCapture = null;
     constructor(config = {}) {
         this.config = {
             ...types_1.DEFAULT_CONFIG,
@@ -146,6 +148,19 @@ class LatticePlugin {
         }
         return this.httpInterceptor;
     }
+    errorHandler() {
+        if (!this.errorCapture) {
+            const serviceName = this.serviceNameDetector.detectServiceName(this.config.serviceName);
+            this.errorCapture = new error_capture_1.ErrorCapture({
+                serviceName,
+                apiEndpoint: this.config.apiEndpoint,
+                apiKey: this.config.apiKey,
+                environment: this.config.environment,
+                enabled: this.config.enabled,
+            });
+        }
+        return this.errorCapture.middleware();
+    }
     handleError(error) {
         if (this.config.onError) {
             this.config.onError(error);
@@ -192,4 +207,8 @@ exports.LatticePlugin = LatticePlugin;
 tslib_1.__exportStar(require("./config/types"), exports);
 var http_interceptor_2 = require("./client/http-interceptor");
 Object.defineProperty(exports, "HttpInterceptor", { enumerable: true, get: function () { return http_interceptor_2.HttpInterceptor; } });
+var error_capture_2 = require("./middleware/error-capture");
+Object.defineProperty(exports, "ErrorCapture", { enumerable: true, get: function () { return error_capture_2.ErrorCapture; } });
+var index_1 = require("./index");
+Object.defineProperty(exports, "LatticeExpress", { enumerable: true, get: function () { return index_1.LatticePlugin; } });
 //# sourceMappingURL=index.js.map

@@ -76,7 +76,7 @@ export const createIngestRouter = (): Router => {
       );
 
       // Return success response
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         serviceId: upsertedService.id,
         routesProcessed,
@@ -84,7 +84,7 @@ export const createIngestRouter = (): Router => {
       });
     } catch (error) {
       console.error('Ingestion error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       });

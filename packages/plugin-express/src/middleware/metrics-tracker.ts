@@ -74,26 +74,35 @@ export class MetricsTracker {
   private async submitMetrics() {
     // Submit every 10 requests
     if (this.metrics.length % 10 === 0) {
-      const metricsToSend = [...this.metrics];
-      console.log(`[MetricsTracker] Submitting ${metricsToSend.length} metrics to ${this.apiEndpoint}/metrics`);
+      const recentMetrics = this.metrics.slice(-10); // Send last 10
+      console.log(`[MetricsTracker] Submitting ${recentMetrics.length} performance traces to ${this.apiEndpoint}/performance/traces`);
 
       try {
-        const response = await fetch(`${this.apiEndpoint}/metrics`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(this.apiKey && { [HTTP_HEADERS.API_KEY]: this.apiKey }),
-          },
-          body: JSON.stringify({
-            serviceName: this.serviceName,
-            metrics: metricsToSend.slice(-10), // Send last 10
-          }),
-        });
-        const result = await response.json();
-        console.log(`[MetricsTracker] Submission result:`, result);
+        // Send each metric as a performance trace
+        for (const metric of recentMetrics) {
+          await fetch(`${this.apiEndpoint}/performance/traces`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(this.apiKey && { [HTTP_HEADERS.API_KEY]: this.apiKey }),
+            },
+            body: JSON.stringify({
+              service_id: this.serviceName,
+              operation_name: `${metric.method} ${metric.path}`,
+              operation_type: 'http_request',
+              start_time: new Date(metric.timestamp.getTime() - metric.responseTime),
+              duration_ms: metric.responseTime,
+              status_code: metric.statusCode,
+              method: metric.method,
+              path: metric.path,
+              caller_service: metric.callerServiceName,
+            }),
+          });
+        }
+        console.log(`[MetricsTracker] Successfully submitted performance traces`);
       } catch (error) {
         // Silently fail - don't break the app
-        console.error('[MetricsTracker] Failed to submit metrics:', error);
+        console.error('[MetricsTracker] Failed to submit performance traces:', error);
       }
     }
   }

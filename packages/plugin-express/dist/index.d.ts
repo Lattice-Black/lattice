@@ -12,6 +12,7 @@ export declare class LatticePlugin {
     private submitTimer;
     private metricsTracker;
     private httpInterceptor;
+    private errorCapture;
     constructor(config?: LatticeConfig);
     analyze(app: Application): Promise<ServiceMetadataSubmission>;
     submit(metadata?: ServiceMetadataSubmission): Promise<SubmissionResponse | null>;
@@ -22,10 +23,13 @@ export declare class LatticePlugin {
     stop(): void;
     createMetricsMiddleware(): (req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => void;
     getHttpClient(): HttpInterceptor;
+    errorHandler(): (err: Error, req: import("express").Request, _res: import("express").Response, next: import("express").NextFunction) => Promise<void>;
     private handleError;
     private getPackageJson;
     private getEmptyMetadata;
 }
 export * from './config/types';
 export { HttpInterceptor } from './client/http-interceptor';
+export { ErrorCapture } from './middleware/error-capture';
+export { LatticePlugin as LatticeExpress } from './index';
 //# sourceMappingURL=index.d.ts.map

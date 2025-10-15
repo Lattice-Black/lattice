@@ -4,7 +4,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "sourceMap": true,
+    "inlineSources": true
   },
   "include": ["src/**/*", "src/**/*.json"],
   "exclude": ["node_modules", "dist", "tests"]

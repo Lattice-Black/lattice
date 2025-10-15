@@ -30,6 +30,7 @@
   ],
   "dependencies": {
     "@lattice.black/core": "^0.1.4",
+    "error-stack-parser-es": "^1.0.5",
     "glob": "^10.3.10",
     "server-only": "^0.0.1"
   },

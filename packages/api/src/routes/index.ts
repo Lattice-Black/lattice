@@ -6,6 +6,11 @@ import { createAuthRouter } from './auth';
 import { createBillingRouter } from './billing';
 import { createWebhooksRouter } from './webhooks';
 import { createApiKeysRouter } from './api-keys';
+import errorsRouter from './errors';
+import performanceRouter from './performance';
+import breadcrumbsRouter from './breadcrumbs';
+import healthRouter from './health';
+import alertsRouter from './alerts';
 
 /**
  * Main API router
@@ -15,7 +20,7 @@ export const createApiRouter = (): Router => {
 
   // Health check endpoint
   router.get('/health', (_req, res) => {
-    res.json({
+    return res.json({
       status: 'ok',
       version: '1.0.0',
       schemaVersion: '1.0.0',
@@ -31,6 +36,11 @@ export const createApiRouter = (): Router => {
   router.use('/services', createServicesRouter());
   router.use('/metrics', createMetricsRouter());
   router.use('/api-keys', createApiKeysRouter());
+  router.use('/errors', errorsRouter);
+  router.use('/performance', performanceRouter);
+  router.use('/breadcrumbs', breadcrumbsRouter);
+  router.use('/health', healthRouter);
+  router.use('/alerts', alertsRouter);
 
   // TODO: Register additional routes
   // router.use('/graph', graphRouter);

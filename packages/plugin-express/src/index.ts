@@ -12,6 +12,7 @@ import { ServiceNameDetector } from './discovery/service-name-detector';
 import { ApiClient } from './client/api-client';
 import { MetricsTracker } from './middleware/metrics-tracker';
 import { HttpInterceptor } from './client/http-interceptor';
+import { ErrorCapture } from './middleware/error-capture';
 
 /**
  * Lattice Plugin for Express.js
@@ -27,6 +28,7 @@ export class LatticePlugin {
   private submitTimer: NodeJS.Timeout | null = null;
   private metricsTracker: MetricsTracker | null = null;
   private httpInterceptor: HttpInterceptor | null = null;
+  private errorCapture: ErrorCapture | null = null;
 
   constructor(config: LatticeConfig = {}) {
     // Merge config with defaults
@@ -247,6 +249,29 @@ export class LatticePlugin {
   }
 
   /**
+   * Create error capture middleware
+   * MUST be registered AFTER all routes as an error handler
+   *
+   * Usage:
+   * ```typescript
+   * app.use(lattice.errorHandler());
+   * ```
+   */
+  errorHandler() {
+    if (!this.errorCapture) {
+      const serviceName = this.serviceNameDetector.detectServiceName(this.config.serviceName);
+      this.errorCapture = new ErrorCapture({
+        serviceName,
+        apiEndpoint: this.config.apiEndpoint,
+        apiKey: this.config.apiKey,
+        environment: this.config.environment,
+        enabled: this.config.enabled,
+      });
+    }
+    return this.errorCapture.middleware();
+  }
+
+  /**
    * Handle errors with callback
    */
   private handleError(error: Error): void {
@@ -303,3 +328,7 @@ export class LatticePlugin {
 // Re-export types and utilities for convenience
 export * from './config/types';
 export { HttpInterceptor } from './client/http-interceptor';
+export { ErrorCapture } from './middleware/error-capture';
+
+// Convenience alias
+export { LatticePlugin as LatticeExpress } from './index';

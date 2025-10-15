@@ -1,0 +1,845 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lattice Dashboard and Health Monitoring API",
+    "version": "2.0.0",
+    "description": "API endpoints for real-time dashboard views, service health monitoring, and alerting configuration"
+  },
+  "servers": [
+    {
+      "url": "https://api.lattice.black/v1",
+      "description": "Production API"
+    }
+  ],
+  "paths": {
+    "/health/services": {
+      "get": {
+        "summary": "Get service health overview",
+        "description": "Retrieve current health status for all monitored services with real-time metrics.",
+        "operationId": "getServiceHealth",
+        "tags": ["Health Monitoring"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "environment",
+            "in": "query",
+            "description": "Filter by environment",
+            "schema": {
+              "type": "string",
+              "enum": ["development", "staging", "production"]
+            }
+          },
+          {
+            "name": "health_status",
+            "in": "query",
+            "description": "Filter by health status",
+            "schema": {
+              "type": "string",
+              "enum": ["healthy", "degraded", "critical"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service health overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "services": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceHealth"
+                      }
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "total_services": {
+                          "type": "integer"
+                        },
+                        "healthy_count": {
+                          "type": "integer"
+                        },
+                        "degraded_count": {
+                          "type": "integer"
+                        },
+                        "critical_count": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                },
+                "example": {
+                  "services": [
+                    {
+                      "service_id": "api-server-prod",
+                      "service_name": "API Server",
+                      "environment": "production",
+                      "health_status": "healthy",
+                      "error_rate": 2.3,
+                      "avg_response_time_ms": 245,
+                      "request_volume": 120,
+                      "last_error_at": "2025-10-14T10:15:30Z"
+                    },
+                    {
+                      "service_id": "worker-prod",
+                      "service_name": "Background Worker",
+                      "environment": "production",
+                      "health_status": "degraded",
+                      "error_rate": 8.5,
+                      "avg_response_time_ms": 890,
+                      "request_volume": 45,
+                      "last_error_at": "2025-10-14T10:20:00Z"
+                    }
+                  ],
+                  "summary": {
+                    "total_services": 15,
+                    "healthy_count": 12,
+                    "degraded_count": 2,
+                    "critical_count": 1
+                  },
+                  "updated_at": "2025-10-14T10:20:30Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/services/{service_id}": {
+      "get": {
+        "summary": "Get detailed service health",
+        "description": "Retrieve detailed health metrics and trends for a specific service.",
+        "operationId": "getServiceHealthDetail",
+        "tags": ["Health Monitoring"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "service_id",
+            "in": "path",
+            "required": true,
+            "description": "Service identifier",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "description": "Filter by environment",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time_range",
+            "in": "query",
+            "description": "Time range for trends",
+            "schema": {
+              "type": "string",
+              "enum": ["1h", "6h", "24h", "7d"],
+              "default": "1h"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed service health",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServiceHealth"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error_trends": {
+                          "type": "array",
+                          "description": "Error rate over time",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "timestamp": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "error_rate": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        },
+                        "performance_trends": {
+                          "type": "array",
+                          "description": "Response time over time",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "timestamp": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "avg_response_time_ms": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        },
+                        "top_errors": {
+                          "type": "array",
+                          "description": "Most frequent errors in time range",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "error_type": {
+                                "type": "string"
+                              },
+                              "message": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Service not found"
+          }
+        }
+      }
+    },
+    "/alerts/rules": {
+      "get": {
+        "summary": "List alert rules",
+        "description": "Retrieve all configured alert rules for the organization.",
+        "operationId": "listAlertRules",
+        "tags": ["Alerting"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "description": "Filter by enabled status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "service_id",
+            "in": "query",
+            "description": "Filter by service",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of alert rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rules": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AlertRule"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create alert rule",
+        "description": "Configure a new alert rule for error or performance monitoring.",
+        "operationId": "createAlertRule",
+        "tags": ["Alerting"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleCreate"
+              },
+              "examples": {
+                "errorRateAlert": {
+                  "summary": "Error rate threshold alert",
+                  "value": {
+                    "name": "High Error Rate - API Server",
+                    "description": "Alert when API server error rate exceeds 10 per minute",
+                    "service_id": "api-server-prod",
+                    "environment": "production",
+                    "condition_type": "error_rate",
+                    "threshold": {
+                      "errors_per_minute": 10,
+                      "comparison": "greater_than"
+                    },
+                    "evaluation_window_minutes": 10,
+                    "notification_channels": [
+                      {
+                        "type": "email",
+                        "address": "ops@example.com"
+                      },
+                      {
+                        "type": "webhook",
+                        "url": "https://hooks.slack.com/services/T00/B00/XXX"
+                      }
+                    ]
+                  }
+                },
+                "performanceAlert": {
+                  "summary": "Performance degradation alert",
+                  "value": {
+                    "name": "Slow Response Time - API",
+                    "description": "Alert when average response time exceeds 5 seconds",
+                    "service_id": "api-server-prod",
+                    "environment": "production",
+                    "condition_type": "performance_threshold",
+                    "threshold": {
+                      "avg_response_time_ms": 5000,
+                      "comparison": "greater_than"
+                    },
+                    "evaluation_window_minutes": 5,
+                    "notification_channels": [
+                      {
+                        "type": "email",
+                        "address": "engineering@example.com"
+                      }
+                    ]
+                  }
+                },
+                "specificErrorAlert": {
+                  "summary": "Specific error type alert",
+                  "value": {
+                    "name": "Database Connection Errors",
+                    "description": "Alert on any database connection error",
+                    "service_id": null,
+                    "environment": "production",
+                    "condition_type": "error_type_match",
+                    "threshold": {
+                      "error_types": [
+                        "DatabaseConnectionError",
+                        "ConnectionPoolExhausted"
+                      ]
+                    },
+                    "evaluation_window_minutes": 1,
+                    "notification_channels": [
+                      {
+                        "type": "email",
+                        "address": "oncall@example.com"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alert rule created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body"
+          }
+        }
+      }
+    },
+    "/alerts/rules/{id}": {
+      "get": {
+        "summary": "Get alert rule",
+        "description": "Retrieve details for a specific alert rule.",
+        "operationId": "getAlertRule",
+        "tags": ["Alerting"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Alert rule ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert rule details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alert rule not found"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update alert rule",
+        "description": "Update an existing alert rule configuration.",
+        "operationId": "updateAlertRule",
+        "tags": ["Alerting"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Alert rule ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "threshold": {
+                    "type": "object"
+                  },
+                  "notification_channels": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Alert rule updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alert rule not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete alert rule",
+        "description": "Delete an alert rule permanently.",
+        "operationId": "deleteAlertRule",
+        "tags": ["Alerting"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Alert rule ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Alert rule deleted successfully"
+          },
+          "404": {
+            "description": "Alert rule not found"
+          }
+        }
+      }
+    },
+    "/alerts/notifications": {
+      "get": {
+        "summary": "List alert notifications",
+        "description": "Retrieve history of alert notifications sent.",
+        "operationId": "listAlertNotifications",
+        "tags": ["Alerting"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_rule_id",
+            "in": "query",
+            "description": "Filter by alert rule",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "service_id",
+            "in": "query",
+            "description": "Filter by service",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolved",
+            "in": "query",
+            "description": "Filter by resolution status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "Filter notifications after this timestamp",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of alert notifications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notifications": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AlertNotification"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Lattice-Api-Key"
+      }
+    },
+    "schemas": {
+      "ServiceHealth": {
+        "type": "object",
+        "properties": {
+          "service_id": {
+            "type": "string",
+            "description": "Service identifier"
+          },
+          "service_name": {
+            "type": "string",
+            "description": "Human-readable service name"
+          },
+          "environment": {
+            "type": "string",
+            "description": "Environment"
+          },
+          "health_status": {
+            "type": "string",
+            "enum": ["healthy", "degraded", "critical"],
+            "description": "Current health status"
+          },
+          "error_rate": {
+            "type": "number",
+            "description": "Errors per minute (last 10 minutes)"
+          },
+          "avg_response_time_ms": {
+            "type": "integer",
+            "description": "Average response time in milliseconds (last 10 minutes)"
+          },
+          "request_volume": {
+            "type": "integer",
+            "description": "Requests per minute (last 10 minutes)"
+          },
+          "last_error_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of most recent error"
+          }
+        }
+      },
+      "AlertRule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique alert rule identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable rule name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Rule description"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether rule is active"
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Specific service (null = all services)"
+          },
+          "environment": {
+            "type": "string",
+            "description": "Specific environment (null = all environments)"
+          },
+          "condition_type": {
+            "type": "string",
+            "enum": ["error_rate", "error_type_match", "performance_threshold"],
+            "description": "Type of condition"
+          },
+          "threshold": {
+            "type": "object",
+            "description": "Threshold configuration (structure varies by condition_type)"
+          },
+          "evaluation_window_minutes": {
+            "type": "integer",
+            "description": "Time window for evaluation"
+          },
+          "notification_channels": {
+            "type": "array",
+            "description": "Notification channels",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["email", "webhook"]
+                },
+                "address": {
+                  "type": "string",
+                  "description": "Email address (for email type)"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Webhook URL (for webhook type)"
+                }
+              }
+            }
+          },
+          "last_triggered_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When rule last triggered"
+          },
+          "trigger_count": {
+            "type": "integer",
+            "description": "Total times rule has triggered"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AlertRuleCreate": {
+        "type": "object",
+        "required": ["name", "condition_type", "threshold", "notification_channels"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Specific service (omit for all services)"
+          },
+          "environment": {
+            "type": "string",
+            "description": "Specific environment (omit for all environments)"
+          },
+          "condition_type": {
+            "type": "string",
+            "enum": ["error_rate", "error_type_match", "performance_threshold"]
+          },
+          "threshold": {
+            "type": "object"
+          },
+          "evaluation_window_minutes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60,
+            "default": 10
+          },
+          "notification_channels": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "AlertNotification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "alert_rule_id": {
+            "type": "string"
+          },
+          "alert_rule_name": {
+            "type": "string"
+          },
+          "service_id": {
+            "type": "string"
+          },
+          "service_name": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "triggered_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolved_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When condition resolved (null if still active)"
+          },
+          "notification_status": {
+            "type": "string",
+            "enum": ["pending", "sent", "failed", "grouped"]
+          },
+          "grouped_count": {
+            "type": "integer",
+            "description": "Number of alerts grouped together"
+          },
+          "trigger_data": {
+            "type": "object",
+            "description": "Snapshot of data that triggered alert"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error", "message"],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}
