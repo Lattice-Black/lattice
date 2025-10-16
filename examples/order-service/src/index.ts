@@ -73,7 +73,7 @@ const lattice = new LatticePlugin({
   environment: 'development',
   apiEndpoint: 'http://localhost:8100/api/v1',
   enabled: true,
-  autoSubmit: true,
+  autoSubmit: false, // Disabled to avoid hitting service limit on free plan
   onAnalyzed: (metadata) => {
     console.log(`\n✅ Lattice analyzed service: ${metadata.service.name}`);
     console.log(`   - Routes discovered: ${metadata.routes?.length || 0}`);

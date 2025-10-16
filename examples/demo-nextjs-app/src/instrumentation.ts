@@ -9,7 +9,7 @@ export async function register() {
       environment: 'development',
       apiEndpoint: 'http://localhost:8100/api/v1',
       enabled: true,
-      autoSubmit: true,
+      autoSubmit: false, // Disabled to avoid hitting service limit on free plan
       onAnalyzed: (metadata) => {
         console.log('📊 Service metadata analyzed:', {
           service: metadata.service.name,
