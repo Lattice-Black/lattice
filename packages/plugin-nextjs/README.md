@@ -20,7 +20,7 @@ npm install @lattice.black/plugin-nextjs
 
 ### 1. Configure next.config.js
 
-**IMPORTANT**: You must add this package to `serverComponentsExternalPackages` to prevent webpack bundling errors:
+Enable the instrumentation hook in your `next.config.js`:
 
 ```javascript
 /** @type {import('next').NextConfig} */
@@ -28,24 +28,22 @@ const nextConfig = {
   experimental: {
     instrumentationHook: true,
   },
-  serverComponentsExternalPackages: ['@lattice.black/plugin-nextjs'],
 }
 
 export default nextConfig;
 ```
-
-> Without `serverComponentsExternalPackages`, Next.js will try to bundle this server-only package for the browser, causing "Module not found" errors for Node.js APIs.
 
 ### 2. Create Instrumentation File (Recommended)
 
 Create `src/instrumentation.ts` in your Next.js project:
 
 ```typescript
-import { LatticeNextPlugin } from '@lattice.black/plugin-nextjs';
-
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     console.log('🔍 Initializing Lattice plugin for Next.js...');
+
+    // Use dynamic import to avoid webpack bundling server-only code
+    const { LatticeNextPlugin } = await import('@lattice.black/plugin-nextjs');
 
     const lattice = new LatticeNextPlugin({
       serviceName: 'my-nextjs-app',
@@ -76,6 +74,8 @@ export async function register() {
   }
 }
 ```
+
+**Important**: Always use dynamic `import()` in `instrumentation.ts` to avoid webpack bundling issues with Node.js-specific packages. This is the recommended pattern for Next.js 14+.
 
 ## Quick Start (Alternative Methods)
 

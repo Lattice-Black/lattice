@@ -1,8 +1,9 @@
-import { LatticeNextPlugin } from '@caryyon/plugin-nextjs';
-
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     console.log('🔍 Initializing Lattice plugin for Next.js...');
+
+    // Use dynamic import to avoid webpack bundling server-only code
+    const { LatticeNextPlugin } = await import('@caryyon/plugin-nextjs');
 
     const lattice = new LatticeNextPlugin({
       serviceName: 'demo-nextjs-app',

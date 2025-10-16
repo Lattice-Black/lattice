@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2025-10-16
+
+### Fixed
+
+- **Fixed Next.js 14.2 instrumentation hook webpack bundling errors**
+  - Resolved "UnhandledSchemeError: Reading from 'node:fs/promises' is not handled by plugins"
+  - Updated all documentation to use dynamic imports in instrumentation.ts
+  - Removed unnecessary `serverComponentsExternalPackages` configuration (not needed with dynamic imports)
+  - Updated examples to show correct usage pattern
+
+### Documentation
+
+- Updated README.md with dynamic import pattern for instrumentation hook
+- Updated USER_GUIDE.md with correct setup instructions
+- Updated QUICK_START.md with simplified configuration
+- Added NEXTJS_INSTRUMENTATION_FIX.md explaining the solution in detail
+- Improved troubleshooting sections with correct error messages and solutions
+
 ## [0.2.0] - 2025-10-11
 
 ### Changed

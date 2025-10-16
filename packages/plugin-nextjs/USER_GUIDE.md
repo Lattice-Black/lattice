@@ -18,7 +18,7 @@ The `@lattice.black/plugin-nextjs` package uses Node.js APIs (`fs`, `path`, `glo
 
 ### Step 1: Configure next.config.js
 
-Add the package to `serverComponentsExternalPackages` to prevent Next.js from bundling it:
+Enable the instrumentation hook in your `next.config.js`:
 
 ```javascript
 /** @type {import('next').NextConfig} */
@@ -26,7 +26,6 @@ const nextConfig = {
   experimental: {
     instrumentationHook: true,
   },
-  serverComponentsExternalPackages: ['@lattice.black/plugin-nextjs'],
 };
 
 export default nextConfig;
@@ -37,11 +36,12 @@ export default nextConfig;
 Create a file at `src/instrumentation.ts` (or `instrumentation.ts` in your project root):
 
 ```typescript
-import { LatticeNextPlugin } from '@lattice.black/plugin-nextjs';
-
 export async function register() {
   // Only run on Node.js server runtime (not Edge runtime)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Use dynamic import to avoid webpack bundling server-only code
+    const { LatticeNextPlugin } = await import('@lattice.black/plugin-nextjs');
+
     const lattice = new LatticeNextPlugin({
       serviceName: 'my-nextjs-app',
       environment: process.env.NODE_ENV || 'development',
@@ -65,6 +65,8 @@ export async function register() {
   }
 }
 ```
+
+**Important**: Always use dynamic `import()` in `instrumentation.ts` to prevent webpack from trying to bundle Node.js-specific packages. This is the recommended pattern for Next.js 14+.
 
 ### Step 3: Environment Variables
 
@@ -113,11 +115,11 @@ interface LatticeNextConfig {
 
 ## Troubleshooting
 
-### "Module not found: Can't resolve 'node:fs'"
+### "Module not found: Can't resolve 'node:fs'" or "UnhandledSchemeError: Reading from 'node:fs/promises'"
 
-This error means Next.js is trying to bundle the package for the browser. Make sure:
+This error means Next.js webpack is trying to bundle the package. Make sure:
 
-1. You've added the package to `serverComponentsExternalPackages` in `next.config.js`
+1. You're using dynamic `import()` in your instrumentation file (not static imports)
 2. You're using the instrumentation hook correctly
 3. You're checking for `process.env.NEXT_RUNTIME === 'nodejs'`
 

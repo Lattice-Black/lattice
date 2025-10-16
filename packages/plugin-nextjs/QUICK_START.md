@@ -18,7 +18,6 @@ const nextConfig = {
   experimental: {
     instrumentationHook: true,
   },
-  serverComponentsExternalPackages: ['@lattice.black/plugin-nextjs'],
 };
 
 export default nextConfig;
@@ -29,10 +28,11 @@ export default nextConfig;
 Create `src/instrumentation.ts`:
 
 ```typescript
-import { LatticeNextPlugin } from '@lattice.black/plugin-nextjs';
-
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Use dynamic import to avoid webpack bundling server-only code
+    const { LatticeNextPlugin } = await import('@lattice.black/plugin-nextjs');
+
     const lattice = new LatticeNextPlugin({
       serviceName: 'my-nextjs-app',
       environment: process.env.NODE_ENV,
@@ -71,7 +71,7 @@ The plugin will now:
 
 ### Webpack Errors?
 
-Make sure `serverComponentsExternalPackages` is in your `next.config.js`.
+Make sure you're using dynamic `import()` in your instrumentation file (not static imports).
 
 ### Not Discovering Routes?
 
