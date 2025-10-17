@@ -2,12 +2,8 @@
  * Breadcrumb Service - Handle breadcrumb storage and retrieval
  */
 
-import { Pool } from 'pg';
+import { pool } from '../lib/db';
 import type { Breadcrumb, BreadcrumbCategory, BreadcrumbLevel } from '@lattice.black/core';
-
-const pool = new Pool({
-  connectionString: process.env["DATABASE_URL"],
-});
 
 export interface BreadcrumbInput {
   session_id: string;

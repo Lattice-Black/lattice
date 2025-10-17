@@ -2,11 +2,7 @@
  * Retention Service - Tier-based data retention policies
  */
 
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env["DATABASE_URL"],
-});
+import { pool } from '../lib/db';
 
 export enum SubscriptionTier {
   Trial = 'trial',

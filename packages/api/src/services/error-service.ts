@@ -2,13 +2,9 @@
  * Error Service - Handle error event storage and retrieval
  */
 
-import { Pool } from 'pg';
+import { pool } from '../lib/db';
 import type { StackFrame } from '@lattice.black/core';
 import { getBreadcrumbsBySession } from './breadcrumb-service';
-
-const pool = new Pool({
-  connectionString: process.env["DATABASE_URL"],
-});
 
 export interface ErrorEventInput {
   service_id: string;

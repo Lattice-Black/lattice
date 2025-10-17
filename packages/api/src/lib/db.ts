@@ -1,39 +1,48 @@
 import { Pool } from 'pg';
 
 /**
- * PostgreSQL connection pool (now connects to Supabase)
+ * PostgreSQL connection pool (connects to Supabase or local PostgreSQL)
  */
 export const pool = new Pool({
-  host: process.env['SUPABASE_DB_HOST'] || 'aws-0-us-east-2.pooler.supabase.com',
-  port: parseInt(process.env['SUPABASE_DB_PORT'] || '6543'),
-  database: process.env['SUPABASE_DB_NAME'] || 'postgres',
-  user: process.env['SUPABASE_DB_USER'] || 'postgres.hgruvuhrtznijhsqvagn',
-  password: process.env['SUPABASE_DB_PASSWORD'] || '',
+  connectionString: process.env['DATABASE_URL'],
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: process.env['DATABASE_URL']?.includes('supabase.com')
+    ? { rejectUnauthorized: false }
+    : false,
 });
 
 /**
- * Test database connection
+ * Handle connection errors
  */
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+  // Don't exit in development - just log the error
+  if (process.env['NODE_ENV'] === 'production') {
+    process.exit(-1);
+  }
 });
 
 /**
- * Graceful shutdown
+ * Graceful shutdown - only set up once
  */
-process.on('SIGINT', async () => {
-  await pool.end();
-  process.exit(0);
-});
+let isShuttingDown = false;
 
-process.on('SIGTERM', async () => {
-  await pool.end();
+const gracefulShutdown = async () => {
+  if (isShuttingDown) {
+    return; // Already shutting down
+  }
+  isShuttingDown = true;
+
+  try {
+    await pool.end();
+    console.log('Database pool closed');
+  } catch (error) {
+    console.error('Error closing database pool:', error);
+  }
   process.exit(0);
-});
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);

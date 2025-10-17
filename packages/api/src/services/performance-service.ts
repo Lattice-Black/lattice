@@ -2,11 +2,7 @@
  * Performance Service - Handle performance trace storage and metrics
  */
 
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env["DATABASE_URL"],
-});
+import { pool } from '../lib/db';
 
 export interface PerformanceTraceInput {
   service_id: string;

@@ -2,12 +2,8 @@
  * Alert Evaluator - Evaluate alert rules against current metrics
  */
 
-import { Pool } from 'pg';
+import { pool } from '../lib/db';
 import { listAlertRules, createAlertNotification } from './alert-service';
-
-const pool = new Pool({
-  connectionString: process.env["DATABASE_URL"],
-});
 
 export async function evaluateAlertRules(): Promise<void> {
   const rules = await listAlertRules();
