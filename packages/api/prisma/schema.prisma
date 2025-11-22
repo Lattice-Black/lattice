@@ -19,11 +19,11 @@ model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
-  emailVerified DateTime?
+  emailVerified DateTime? @map("email_verified")
   image         String?
   password      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   apiKeys       ApiKey[]
   subscription  Subscription?
@@ -34,11 +34,11 @@ model User {
 
 model ApiKey {
   id        String    @id @default(cuid())
-  userId    String
-  keyHash   String    @unique
+  userId    String    @map("user_id")
+  keyHash   String    @unique @map("key_hash")
   name      String?   @default("Default API Key")
-  lastUsed  DateTime?
-  createdAt DateTime  @default(now())
+  lastUsed  DateTime? @map("last_used")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -55,15 +55,15 @@ enum SubscriptionStatus {
 
 model Subscription {
   id                   String             @id @default(cuid())
-  userId               String             @unique
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
+  userId               String             @unique @map("user_id")
+  stripeCustomerId     String?            @map("stripe_customer_id")
+  stripeSubscriptionId String?            @map("stripe_subscription_id")
   status               SubscriptionStatus @default(inactive)
   plan                 String?            @default("free")
-  currentPeriodEnd     DateTime?
-  trialEnd             DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  currentPeriodEnd     DateTime?          @map("current_period_end")
+  trialEnd             DateTime?          @map("trial_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -82,26 +82,26 @@ enum ServiceStatus {
 
 model Service {
   id               String        @id @default(cuid())
-  userId           String
+  userId           String        @map("user_id")
   name             String
   version          String?
   environment      String?
-  deploymentType   String?
+  deploymentType   String?       @map("deployment_type")
   language         String
   framework        String
   runtime          String?
   description      String?
   repository       String?
-  healthCheckUrl   String?
+  healthCheckUrl   String?       @map("health_check_url")
   status           ServiceStatus @default(unknown)
-  firstSeen        DateTime      @default(now())
-  lastSeen         DateTime      @default(now())
-  discoveredBy     Json?
+  firstSeen        DateTime      @default(now()) @map("first_seen")
+  lastSeen         DateTime      @default(now()) @map("last_seen")
+  discoveredBy     Json?         @map("discovered_by")
   metadata         Json?
-  totalRequests    Int           @default(0)
-  avgResponseTimeMs Int          @default(0)
-  errorRate        Decimal       @default(0) @db.Decimal(5, 2)
-  lastMetricUpdate DateTime?
+  totalRequests    Int           @default(0) @map("total_requests")
+  avgResponseTimeMs Int          @default(0) @map("avg_response_time_ms")
+  errorRate        Decimal       @default(0) @db.Decimal(5, 2) @map("error_rate")
+  lastMetricUpdate DateTime?     @map("last_metric_update")
 
   user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   metrics ServiceMetric[]
@@ -120,12 +120,12 @@ model Service {
 
 model ServiceMetric {
   id                String   @id @default(cuid())
-  serviceId         String
+  serviceId         String   @map("service_id")
   method            String
   path              String
-  statusCode        Int
-  responseTimeMs    Int
-  callerServiceName String?
+  statusCode        Int      @map("status_code")
+  responseTimeMs    Int      @map("response_time_ms")
+  callerServiceName String?  @map("caller_service_name")
   timestamp         DateTime @default(now())
 
   service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
@@ -138,22 +138,22 @@ model ServiceMetric {
 // Route entity - HTTP endpoints within services
 model Route {
   id                String   @id @default(cuid())
-  serviceId         String
+  serviceId         String   @map("service_id")
   method            String
   path              String
-  middlewareChain   String[]
-  handlerLocation   Json?
-  pathParameters    Json?
-  queryParameters   Json?
-  requestSchema     Json?
-  responseSchema    Json?
+  middlewareChain   String[] @map("middleware_chain")
+  handlerLocation   Json?    @map("handler_location")
+  pathParameters    Json?    @map("path_parameters")
+  queryParameters   Json?    @map("query_parameters")
+  requestSchema     Json?    @map("request_schema")
+  responseSchema    Json?    @map("response_schema")
   description       String?
   tags              String[]
-  avgResponseTimeMs Float?
-  callFrequency     Float?
-  errorRate         Float?
-  firstSeen         DateTime @default(now())
-  lastSeen          DateTime @updatedAt
+  avgResponseTimeMs Float?   @map("avg_response_time_ms")
+  callFrequency     Float?   @map("call_frequency")
+  errorRate         Float?   @map("error_rate")
+  firstSeen         DateTime @default(now()) @map("first_seen")
+  lastSeen          DateTime @updatedAt @map("last_seen")
   metadata          Json?
 
   service           Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
@@ -168,24 +168,24 @@ model Route {
 // Dependency entity - External packages used by services
 model Dependency {
   id                  String   @id @default(cuid())
-  serviceId           String
-  packageName         String
+  serviceId           String   @map("service_id")
+  packageName         String   @map("package_name")
   version             String
-  versionRange        String?
-  dependencyType      String
+  versionRange        String?  @map("version_range")
+  dependencyType      String   @map("dependency_type")
   scope               String?
-  installedSize       Int?
-  publishSize         Int?
-  fileCount           Int?
-  hasVulnerabilities  Boolean?
-  vulnerabilityCount  Int?
-  highestSeverity     String?
+  installedSize       Int?     @map("installed_size")
+  publishSize         Int?     @map("publish_size")
+  fileCount           Int?     @map("file_count")
+  hasVulnerabilities  Boolean? @map("has_vulnerabilities")
+  vulnerabilityCount  Int?     @map("vulnerability_count")
+  highestSeverity     String?  @map("highest_severity")
   description         String?
   license             String?
   repository          String?
   homepage            String?
-  firstSeen           DateTime @default(now())
-  lastSeen            DateTime @updatedAt
+  firstSeen           DateTime @default(now()) @map("first_seen")
+  lastSeen            DateTime @updatedAt @map("last_seen")
   metadata            Json?
 
   service             Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
@@ -200,23 +200,23 @@ model Dependency {
 // Connection entity - Service-to-service communication edges
 model Connection {
   id                  String   @id @default(cuid())
-  sourceServiceId     String
-  targetServiceId     String
-  targetRouteId       String?
+  sourceServiceId     String   @map("source_service_id")
+  targetServiceId     String   @map("target_service_id")
+  targetRouteId       String?  @map("target_route_id")
   method              String
   path                String
-  callCount           Int      @default(0)
-  avgResponseTimeMs   Float?
-  p95ResponseTimeMs   Float?
-  p99ResponseTimeMs   Float?
-  successCount        Int      @default(0)
-  errorCount          Int      @default(0)
-  errorRate           Float    @default(0)
-  requestFrequency    Float?
-  peakTime            String?
-  firstSeen           DateTime @default(now())
-  lastSeen            DateTime @updatedAt
-  sampleTraceIds      String[]
+  callCount           Int      @default(0) @map("call_count")
+  avgResponseTimeMs   Float?   @map("avg_response_time_ms")
+  p95ResponseTimeMs   Float?   @map("p95_response_time_ms")
+  p99ResponseTimeMs   Float?   @map("p99_response_time_ms")
+  successCount        Int      @default(0) @map("success_count")
+  errorCount          Int      @default(0) @map("error_count")
+  errorRate           Float    @default(0) @map("error_rate")
+  requestFrequency    Float?   @map("request_frequency")
+  peakTime            String?  @map("peak_time")
+  firstSeen           DateTime @default(now()) @map("first_seen")
+  lastSeen            DateTime @updatedAt @map("last_seen")
+  sampleTraceIds      String[] @map("sample_trace_ids")
   metadata            Json?
 
   sourceService       Service  @relation("SourceService", fields: [sourceServiceId], references: [id], onDelete: Cascade)
@@ -236,19 +236,19 @@ model Plugin {
   id                      String   @id @default(cuid())
   name                    String   @unique
   version                 String
-  supportedFrameworks     String[]
-  supportedSchemaVersions String[]
-  preferredSchemaVersion  String
-  canDiscoverRoutes       Boolean  @default(false)
-  canDiscoverDependencies Boolean  @default(false)
-  canTrackConnections     Boolean  @default(false)
+  supportedFrameworks     String[] @map("supported_frameworks")
+  supportedSchemaVersions String[] @map("supported_schema_versions")
+  preferredSchemaVersion  String   @map("preferred_schema_version")
+  canDiscoverRoutes       Boolean  @default(false) @map("can_discover_routes")
+  canDiscoverDependencies Boolean  @default(false) @map("can_discover_dependencies")
+  canTrackConnections     Boolean  @default(false) @map("can_track_connections")
   description             String?
   author                  String?
   repository              String?
   documentation           String?
-  servicesUsing           Int      @default(0)
-  registeredAt            DateTime @default(now())
-  lastUsed                DateTime?
+  servicesUsing           Int      @default(0) @map("services_using")
+  registeredAt            DateTime @default(now()) @map("registered_at")
+  lastUsed                DateTime? @map("last_used")
   metadata                Json?
 
   @@index([name])
