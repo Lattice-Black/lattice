@@ -1,10 +1,11 @@
-import { ServiceMetadataSubmission, HTTP_HEADERS, API_ENDPOINTS } from '@lattice.black/core';
+import { ServiceMetadataSubmission, HTTP_HEADERS, API_ENDPOINTS, ErrorEvent } from '@lattice.black/core';
 import { SubmissionResponse } from '../config/types';
+import type { LatticeApiClient } from './noop-client';
 
 /**
  * API client for submitting metadata to Lattice collector
  */
-export class ApiClient {
+export class ApiClient implements LatticeApiClient {
   private apiEndpoint: string;
   private apiKey: string;
 
@@ -59,8 +60,64 @@ export class ApiClient {
       });
 
       return response.ok;
-    } catch (error) {
+    } catch {
       return false;
+    }
+  }
+
+  /**
+   * Submit errors to collector API
+   */
+  async submitErrors(errors: Partial<ErrorEvent>[]): Promise<void> {
+    const url = `${this.apiEndpoint}/errors/batch`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(this.apiKey && { [HTTP_HEADERS.API_KEY]: this.apiKey }),
+        },
+        body: JSON.stringify({ errors }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error submission failed: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to submit errors: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Submit metrics to collector API
+   */
+  async submitMetrics(metrics: unknown[]): Promise<void> {
+    const url = `${this.apiEndpoint}/performance/traces/batch`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(this.apiKey && { [HTTP_HEADERS.API_KEY]: this.apiKey }),
+        },
+        body: JSON.stringify({ traces: metrics }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Metrics submission failed: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to submit metrics: ${error.message}`);
+      }
+      throw error;
     }
   }
 }

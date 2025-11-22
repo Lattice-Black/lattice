@@ -1,0 +1,3025 @@
+/* Google Fonts - JetBrains Mono */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700&display=swap');
+
+
+/* Duro CSS Variables - Auto-generated from theme */
+:root,
+[data-theme="light"] {
+  --duro-color-text: #FFFFFF;
+  --duro-color-background: #000000;
+  --duro-color-primary: #FFFFFF;
+  --duro-color-secondary: #808080;
+  --duro-color-accent: #404040;
+  --duro-color-muted: #1a1a1a;
+  --duro-color-success: #FFFFFF;
+  --duro-color-warning: #808080;
+  --duro-color-error: #FFFFFF;
+  --duro-color-info: #808080;
+  --duro-space-0: 0;
+  --duro-space-1: 0.25rem;
+  --duro-space-2: 0.5rem;
+  --duro-space-3: 0.75rem;
+  --duro-space-4: 1rem;
+  --duro-space-5: 1.5rem;
+  --duro-space-6: 2rem;
+  --duro-space-7: 3rem;
+  --duro-space-8: 4rem;
+  --duro-font-body: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  --duro-font-heading: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  --duro-font-monospace: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  --duro-font-size-xs: 0.6875rem;
+  --duro-font-size-sm: 0.75rem;
+  --duro-font-size-md: 0.875rem;
+  --duro-font-size-lg: 1rem;
+  --duro-font-size-xl: 1.125rem;
+  --duro-font-size-2xl: 1.25rem;
+  --duro-font-size-3xl: 1.5rem;
+  --duro-line-height-tight: 1.2;
+  --duro-line-height-normal: 1.5;
+  --duro-line-height-relaxed: 1.75;
+  --duro-border-none: none;
+  --duro-border-thin: 1px solid;
+  --duro-border-medium: 1px solid;
+  --duro-border-thick: 2px solid;
+  --duro-radius-none: 0;
+  --duro-radius-sm: 0;
+  --duro-radius-md: 0;
+  --duro-radius-lg: 0;
+  --duro-radius-full: 0;
+  --duro-shadow-none: none;
+  --duro-shadow-sm: none;
+  --duro-shadow-md: none;
+  --duro-shadow-lg: none;
+  --duro-shadow-xl: none;
+  --duro-shadow-glow: 0 0 10px rgba(255, 255, 255, 0.3);
+  --duro-shadow-glow-strong: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+  --duro-color-text: #FFFFFF;
+  --duro-color-background: #000000;
+  --duro-color-primary: #FFFFFF;
+  --duro-color-secondary: #808080;
+  --duro-color-accent: #404040;
+  --duro-color-muted: #1a1a1a;
+  --duro-color-success: #FFFFFF;
+  --duro-color-warning: #808080;
+  --duro-color-error: #FFFFFF;
+  --duro-color-info: #808080;
+  --duro-space-0: 0;
+  --duro-space-1: 0.25rem;
+  --duro-space-2: 0.5rem;
+  --duro-space-3: 0.75rem;
+  --duro-space-4: 1rem;
+  --duro-space-5: 1.5rem;
+  --duro-space-6: 2rem;
+  --duro-space-7: 3rem;
+  --duro-space-8: 4rem;
+  --duro-font-body: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  --duro-font-heading: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  --duro-font-monospace: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  --duro-font-size-xs: 0.6875rem;
+  --duro-font-size-sm: 0.75rem;
+  --duro-font-size-md: 0.875rem;
+  --duro-font-size-lg: 1rem;
+  --duro-font-size-xl: 1.125rem;
+  --duro-font-size-2xl: 1.25rem;
+  --duro-font-size-3xl: 1.5rem;
+  --duro-line-height-tight: 1.2;
+  --duro-line-height-normal: 1.5;
+  --duro-line-height-relaxed: 1.75;
+  --duro-border-none: none;
+  --duro-border-thin: 1px solid;
+  --duro-border-medium: 1px solid;
+  --duro-border-thick: 2px solid;
+  --duro-radius-none: 0;
+  --duro-radius-sm: 0;
+  --duro-radius-md: 0;
+  --duro-radius-lg: 0;
+  --duro-radius-full: 0;
+  --duro-shadow-none: none;
+  --duro-shadow-sm: none;
+  --duro-shadow-md: none;
+  --duro-shadow-lg: none;
+  --duro-shadow-xl: none;
+  --duro-shadow-glow: 0 0 10px rgba(255, 255, 255, 0.3);
+  --duro-shadow-glow-strong: 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+}
+
+
+/* Section Layouts */
+
+.duro-section-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--duro-space-6);
+  gap: var(--duro-space-4);
+}
+
+.duro-section-hero-centered {
+  text-align: center;
+}
+
+.duro-section-hero-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--duro-space-6);
+}
+
+.duro-section-dashboard {
+  display: grid;
+  gap: var(--duro-space-4);
+  padding: var(--duro-space-4);
+}
+
+.duro-section-dashboard-admin {
+  grid-template-areas: "header header" "sidebar main" "sidebar footer";
+  grid-template-columns: 250px 1fr;
+  grid-template-rows: auto 1fr auto;
+}
+
+.duro-section-dashboard-guest {
+  grid-template-areas: "header" "main" "footer";
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+}
+
+.duro-section-dashboard-simple {
+  grid-template-columns: 1fr;
+}
+
+.duro-section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--duro-space-4);
+}
+
+.duro-section-stack-tight {
+  gap: var(--duro-space-2);
+}
+
+.duro-section-stack-loose {
+  gap: var(--duro-space-6);
+}
+
+.duro-section-grid {
+  display: grid;
+  gap: var(--duro-space-4);
+}
+
+.duro-section-grid-cols2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.duro-section-grid-cols3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.duro-section-grid-cols4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.duro-section-grid-responsive {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.duro-section-sidebar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--duro-space-4);
+}
+
+.duro-section-sidebar-left {
+  grid-template-columns: 250px 1fr;
+}
+
+.duro-section-sidebar-right {
+  grid-template-columns: 1fr 250px;
+}
+
+.duro-section-sidebar-wide {
+  grid-template-columns: 350px 1fr;
+}
+
+.duro-section-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--duro-space-3);
+  align-items: flex-start;
+}
+
+.duro-section-cluster-center {
+  justify-content: center;
+  align-items: center;
+}
+
+.duro-section-cluster-space-between {
+  justify-content: space-between;
+}
+
+
+/* Utility Classes */
+.duro-container {
+  container-type: inline-size;
+}
+
+.duro-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Base Styles */
+.duro-box {
+  box-sizing: border-box;
+}
+
+.duro-flex {
+  display: flex;
+}
+
+.duro-grid {
+  display: grid;
+}
+
+
+
+/* Component Styles */
+
+/**
+ * Section Component Styles
+ * Cyberpunk Tech Interface - Layout primitives
+ */
+
+/* ==========================================================================
+   Container Query Base
+   ========================================================================== */
+
+.duro-container {
+  container-type: inline-size;
+}
+
+/* ==========================================================================
+   Stack Layout (vertical spacing)
+   ========================================================================== */
+
+.duro-section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--duro-space-4);
+}
+
+.duro-section-stack-tight {
+  gap: var(--duro-space-2);
+}
+
+.duro-section-stack-loose {
+  gap: var(--duro-space-6);
+}
+
+/* ==========================================================================
+   Grid Layout
+   ========================================================================== */
+
+.duro-section-grid {
+  display: grid;
+  gap: var(--duro-space-4);
+}
+
+.duro-section-grid-cols2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.duro-section-grid-cols3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.duro-section-grid-cols4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Responsive grid - collapse to single column on very small screens */
+@container (max-width: 320px) {
+  .duro-section-grid-cols2,
+  .duro-section-grid-cols3,
+  .duro-section-grid-cols4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Cluster Layout (flex wrap)
+   ========================================================================== */
+
+.duro-section-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--duro-space-3);
+}
+
+.duro-section-cluster-tight {
+  gap: var(--duro-space-2);
+}
+
+.duro-section-cluster-loose {
+  gap: var(--duro-space-4);
+}
+
+/* ==========================================================================
+   Sidebar Layout
+   ========================================================================== */
+
+.duro-section-sidebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--duro-space-4);
+}
+
+.duro-section-sidebar > :first-child {
+  flex-basis: 250px;
+  flex-grow: 1;
+}
+
+.duro-section-sidebar > :last-child {
+  flex-basis: 0;
+  flex-grow: 999;
+  min-inline-size: 50%;
+}
+
+/* ==========================================================================
+   Hero Layout
+   ========================================================================== */
+
+.duro-section-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--duro-space-6);
+  padding: var(--duro-space-8) var(--duro-space-4);
+  min-height: 50vh;
+}
+
+/* ==========================================================================
+   Dashboard Layout
+   ========================================================================== */
+
+.duro-section-dashboard {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: var(--duro-space-4);
+  min-height: 100vh;
+}
+
+@container (max-width: 768px) {
+  .duro-section-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Terminal/HUD Section Variant
+   ========================================================================== */
+
+.duro-section-terminal {
+  position: relative;
+  border: 1px solid var(--duro-color-text);
+  padding: var(--duro-space-4);
+}
+
+.duro-section-terminal::before,
+.duro-section-terminal::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.duro-section-terminal::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.duro-section-terminal::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Section header with terminal styling */
+.duro-section-header {
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--duro-color-secondary);
+  padding-bottom: var(--duro-space-2);
+  margin-bottom: var(--duro-space-4);
+  border-bottom: 1px dashed var(--duro-color-secondary);
+}
+
+.duro-section-header::before {
+  content: '//';
+  margin-right: var(--duro-space-2);
+}
+
+
+/**
+ * Box Component Styles
+ * Cyberpunk Tech Interface - Container primitives
+ */
+
+.duro-box {
+  box-sizing: border-box;
+}
+
+/* Max Width Variants */
+.duro-box-max-xs {
+  max-width: 320px;
+}
+
+.duro-box-max-sm {
+  max-width: 480px;
+}
+
+.duro-box-max-md {
+  max-width: 640px;
+}
+
+.duro-box-max-lg {
+  max-width: 768px;
+}
+
+.duro-box-max-xl {
+  max-width: 1024px;
+}
+
+.duro-box-max-full {
+  max-width: 100%;
+}
+
+/* Padding Variants */
+.duro-box-padding-none {
+  padding: 0;
+}
+
+.duro-box-padding-sm {
+  padding: var(--duro-space-2);
+}
+
+.duro-box-padding-md {
+  padding: var(--duro-space-4);
+}
+
+.duro-box-padding-lg {
+  padding: var(--duro-space-6);
+}
+
+/* Centered */
+.duro-box-centered {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Bordered variant for cyberpunk */
+.duro-box-bordered {
+  border: 1px solid var(--duro-color-text);
+}
+
+/* HUD variant with corner brackets */
+.duro-box-hud {
+  position: relative;
+}
+
+.duro-box-hud::before,
+.duro-box-hud::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.duro-box-hud::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+
+.duro-box-hud::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}
+
+
+/**
+ * Button Component Styles
+ * Cyberpunk Tech Interface - Flat, monochromatic, sharp corners
+ */
+
+.duro-button {
+  /* Reset */
+  border: none;
+  margin: 0;
+  padding: 0;
+  width: auto;
+  overflow: visible;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: normal;
+  -webkit-font-smoothing: inherit;
+  -moz-osx-font-smoothing: inherit;
+  -webkit-appearance: none;
+  cursor: pointer;
+
+  /* Base styles */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-family: var(--duro-font-body);
+  font-size: var(--duro-font-size-sm);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: var(--duro-line-height-tight);
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.duro-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.duro-button:focus {
+  outline: 1px dotted var(--duro-color-text);
+  outline-offset: 2px;
+}
+
+/* Primary variant - Filled white on black */
+.duro-button-primary {
+  background: var(--duro-color-text);
+  color: var(--duro-color-background);
+  padding: var(--duro-space-2) var(--duro-space-4);
+  border: 1px solid var(--duro-color-text);
+}
+
+.duro-button-primary:hover:not(:disabled) {
+  background: transparent;
+  color: var(--duro-color-text);
+}
+
+.duro-button-primary:active:not(:disabled) {
+  background: var(--duro-color-secondary);
+  color: var(--duro-color-background);
+}
+
+/* Secondary variant - Gray tones */
+.duro-button-secondary {
+  background: var(--duro-color-secondary);
+  color: var(--duro-color-background);
+  padding: var(--duro-space-2) var(--duro-space-4);
+  border: 1px solid var(--duro-color-secondary);
+}
+
+.duro-button-secondary:hover:not(:disabled) {
+  background: transparent;
+  color: var(--duro-color-secondary);
+}
+
+.duro-button-secondary:active:not(:disabled) {
+  background: var(--duro-color-accent);
+}
+
+/* Outline variant - Border only */
+.duro-button-outline {
+  background: transparent;
+  color: var(--duro-color-text);
+  padding: var(--duro-space-2) var(--duro-space-4);
+  border: 1px solid var(--duro-color-text);
+}
+
+.duro-button-outline:hover:not(:disabled) {
+  background: var(--duro-color-text);
+  color: var(--duro-color-background);
+}
+
+.duro-button-outline:active:not(:disabled) {
+  background: var(--duro-color-secondary);
+  border-color: var(--duro-color-secondary);
+}
+
+/* Ghost variant - Minimal, text-only */
+.duro-button-ghost {
+  background: transparent;
+  color: var(--duro-color-text);
+  padding: var(--duro-space-2) var(--duro-space-4);
+  border: 1px solid transparent;
+}
+
+.duro-button-ghost:hover:not(:disabled) {
+  border-color: var(--duro-color-text);
+  border-style: dashed;
+}
+
+.duro-button-ghost:active:not(:disabled) {
+  background: var(--duro-color-muted);
+}
+
+/* Destructive variant - Warning style */
+.duro-button-destructive {
+  background: transparent;
+  color: var(--duro-color-text);
+  padding: var(--duro-space-2) var(--duro-space-4);
+  border: 1px solid var(--duro-color-text);
+  position: relative;
+}
+
+.duro-button-destructive::before {
+  content: '!';
+  margin-right: var(--duro-space-2);
+  font-weight: 700;
+}
+
+.duro-button-destructive:hover:not(:disabled) {
+  background: var(--duro-color-text);
+  color: var(--duro-color-background);
+}
+
+/* HUD variant - Corner brackets styling */
+.duro-button-hud {
+  background: transparent;
+  color: var(--duro-color-text);
+  padding: var(--duro-space-2) var(--duro-space-4);
+  border: none;
+  position: relative;
+}
+
+.duro-button-hud::before,
+.duro-button-hud::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+  transition: all 0.15s ease;
+}
+
+.duro-button-hud::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+
+.duro-button-hud::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}
+
+.duro-button-hud:hover:not(:disabled)::before,
+.duro-button-hud:hover:not(:disabled)::after {
+  width: 100%;
+  height: 100%;
+}
+
+/* Size variants */
+.duro-button-sm {
+  font-size: var(--duro-font-size-xs);
+  padding: var(--duro-space-1) var(--duro-space-3);
+}
+
+.duro-button-lg {
+  font-size: var(--duro-font-size-md);
+  padding: var(--duro-space-3) var(--duro-space-5);
+}
+
+/* Glitch effect on hover (optional class) */
+.duro-button-glitch:hover:not(:disabled) {
+  animation: glitch 0.3s ease;
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+
+/**
+ * ButtonGroup Component Styles
+ * Cyberpunk Tech Interface - Grouped button controls
+ */
+
+.duro-button-group {
+  display: inline-flex;
+  gap: var(--duro-space-2);
+}
+
+.duro-button-group-horizontal {
+  flex-direction: row;
+}
+
+.duro-button-group-vertical {
+  flex-direction: column;
+}
+
+/* Attached variant - removes gap and connects buttons */
+.duro-button-group-attached {
+  gap: 0;
+}
+
+.duro-button-group-attached.duro-button-group-horizontal > * {
+  border-radius: 0;
+}
+
+.duro-button-group-attached.duro-button-group-horizontal > *:first-child {
+  border-radius: 0;
+}
+
+.duro-button-group-attached.duro-button-group-horizontal > *:last-child {
+  border-radius: 0;
+}
+
+.duro-button-group-attached.duro-button-group-vertical > * {
+  border-radius: 0;
+}
+
+.duro-button-group-attached.duro-button-group-vertical > *:first-child {
+  border-radius: 0;
+}
+
+.duro-button-group-attached.duro-button-group-vertical > *:last-child {
+  border-radius: 0;
+}
+
+/* Prevent double borders in attached mode */
+.duro-button-group-attached.duro-button-group-horizontal > * + * {
+  margin-left: -1px;
+}
+
+.duro-button-group-attached.duro-button-group-vertical > * + * {
+  margin-top: -1px;
+}
+
+/* Size variants */
+.duro-button-group-sm {
+  gap: var(--duro-space-1);
+}
+
+.duro-button-group-lg {
+  gap: var(--duro-space-3);
+}
+
+/* HUD variant with corner decorations */
+.duro-button-group-hud {
+  position: relative;
+  padding: var(--duro-space-1);
+}
+
+.duro-button-group-hud::before,
+.duro-button-group-hud::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+}
+
+.duro-button-group-hud::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+
+.duro-button-group-hud::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}
+
+
+/**
+ * Card Component Styles
+ * Cyberpunk Tech Interface - HUD-style containers
+ */
+
+.duro-card {
+  background: var(--duro-color-background);
+  border: 1px solid var(--duro-color-text);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Corner bracket decorations */
+.duro-card::before,
+.duro-card::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.duro-card::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.duro-card::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Static variant - no hover effects */
+.duro-card-static::before,
+.duro-card-static::after {
+  display: none;
+}
+
+.duro-card-header {
+  padding: var(--duro-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--duro-space-2);
+  border-bottom: 1px dashed var(--duro-color-secondary);
+}
+
+.duro-card-title {
+  font-size: var(--duro-font-size-md);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: var(--duro-line-height-tight);
+  margin: 0;
+  color: var(--duro-color-text);
+}
+
+.duro-card-description {
+  font-size: var(--duro-font-size-xs);
+  color: var(--duro-color-secondary);
+  line-height: var(--duro-line-height-normal);
+  margin: 0;
+}
+
+.duro-card-content {
+  padding: var(--duro-space-4);
+  flex: 1;
+}
+
+.duro-card-footer {
+  padding: var(--duro-space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--duro-space-3);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.duro-card-footer-bordered {
+  border-top: 1px dashed var(--duro-color-secondary);
+}
+
+.duro-card-footer-start {
+  justify-content: flex-start;
+}
+
+.duro-card-footer-end {
+  justify-content: flex-end;
+}
+
+.duro-card-footer-center {
+  justify-content: center;
+}
+
+.duro-card-footer-spaceBetween {
+  justify-content: space-between;
+}
+
+
+/**
+ * Label Component Styles
+ * Cyberpunk Tech Interface - Terminal-style labels
+ */
+
+.duro-label {
+  font-family: var(--duro-font-body);
+  font-size: var(--duro-font-size-xs);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: var(--duro-line-height-tight);
+  color: var(--duro-color-text);
+  display: inline-block;
+  margin-bottom: var(--duro-space-2);
+  cursor: pointer;
+}
+
+.duro-label-required {
+  color: var(--duro-color-text);
+  margin-left: var(--duro-space-1);
+}
+
+.duro-label-error {
+  color: var(--duro-color-text);
+  border-bottom: 1px dashed var(--duro-color-text);
+  padding-bottom: 1px;
+}
+
+.duro-label:has(+ input:disabled),
+.duro-label:has(+ textarea:disabled),
+.duro-label:has(+ select:disabled) {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Remove bottom margin when label is inside a Stack */
+.duro-section-stack .duro-label,
+.duro-section-stack-tight .duro-label,
+.duro-section-stack-loose .duro-label {
+  margin-bottom: 0;
+}
+
+
+/**
+ * Input Component Styles
+ * Cyberpunk Tech Interface - Terminal-style inputs
+ */
+
+.duro-input {
+  /* Reset */
+  appearance: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+
+  /* Base styles */
+  display: flex;
+  height: 2.25rem;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--duro-color-background);
+  border: 1px solid var(--duro-color-text);
+  padding: var(--duro-space-2) var(--duro-space-3);
+  font-family: var(--duro-font-body);
+  font-size: var(--duro-font-size-sm);
+  line-height: var(--duro-line-height-normal);
+  color: var(--duro-color-text);
+  transition: all 0.15s ease;
+}
+
+.duro-input::placeholder {
+  color: var(--duro-color-secondary);
+  opacity: 0.6;
+}
+
+.duro-input:hover:not(:disabled) {
+  border-color: var(--duro-color-text);
+  box-shadow: inset 0 0 0 1px var(--duro-color-text);
+}
+
+.duro-input:focus {
+  outline: none;
+  border-color: var(--duro-color-text);
+  box-shadow: 0 0 0 1px var(--duro-color-text);
+}
+
+.duro-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+  border-style: dashed;
+}
+
+.duro-input-error {
+  border-color: var(--duro-color-text);
+  border-style: dashed;
+}
+
+.duro-input-error:focus {
+  box-shadow: 0 0 0 1px var(--duro-color-text);
+}
+
+.duro-input-full-width {
+  width: 100%;
+}
+
+/* Container query responsive sizing */
+@container (min-width: 0px) {
+  .duro-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* Input types */
+.duro-input[type="file"] {
+  padding: var(--duro-space-2);
+  cursor: pointer;
+}
+
+.duro-input[type="file"]::-webkit-file-upload-button {
+  padding: var(--duro-space-1) var(--duro-space-3);
+  margin-right: var(--duro-space-2);
+  border: 1px solid var(--duro-color-text);
+  background: transparent;
+  color: var(--duro-color-text);
+  font-family: var(--duro-font-body);
+  font-size: var(--duro-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.duro-input[type="file"]::-webkit-file-upload-button:hover {
+  background: var(--duro-color-text);
+  color: var(--duro-color-background);
+}
+
+
+/**
+ * Textarea Component Styles
+ * Cyberpunk Tech Interface - Terminal-style text areas
+ */
+
+.duro-textarea {
+  /* Reset */
+  appearance: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+
+  /* Base styles */
+  display: block;
+  min-height: 5rem;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--duro-color-background);
+  border: 1px solid var(--duro-color-text);
+  padding: var(--duro-space-3);
+  font-family: var(--duro-font-body);
+  font-size: var(--duro-font-size-sm);
+  line-height: var(--duro-line-height-normal);
+  color: var(--duro-color-text);
+  transition: all 0.15s ease;
+  resize: vertical;
+}
+
+.duro-textarea::placeholder {
+  color: var(--duro-color-secondary);
+  opacity: 0.6;
+}
+
+.duro-textarea:hover:not(:disabled) {
+  border-color: var(--duro-color-text);
+  box-shadow: inset 0 0 0 1px var(--duro-color-text);
+}
+
+.duro-textarea:focus {
+  outline: none;
+  border-color: var(--duro-color-text);
+  box-shadow: 0 0 0 1px var(--duro-color-text);
+}
+
+.duro-textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+  border-style: dashed;
+  resize: none;
+}
+
+.duro-textarea-error {
+  border-style: dashed;
+}
+
+.duro-textarea-error:focus {
+  box-shadow: 0 0 0 1px var(--duro-color-text);
+}
+
+.duro-textarea-full-width {
+  width: 100%;
+}
+
+/* Resize options */
+.duro-textarea-resize-none {
+  resize: none;
+}
+
+.duro-textarea-resize-vertical {
+  resize: vertical;
+}
+
+.duro-textarea-resize-horizontal {
+  resize: horizontal;
+}
+
+.duro-textarea-resize-both {
+  resize: both;
+}
+
+
+/**
+ * Checkbox Component Styles
+ * Cyberpunk Tech Interface - Terminal-style checkboxes
+ */
+
+.duro-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--duro-color-text);
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.duro-checkbox:hover:not(:disabled) {
+  border-color: var(--duro-color-text);
+  box-shadow: inset 0 0 0 1px var(--duro-color-text);
+}
+
+.duro-checkbox:focus {
+  outline: 1px dotted var(--duro-color-text);
+  outline-offset: 2px;
+}
+
+.duro-checkbox:checked {
+  background-color: var(--duro-color-text);
+  border-color: var(--duro-color-text);
+}
+
+.duro-checkbox:checked::after {
+  content: '×';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--duro-color-background);
+  font-family: var(--duro-font-monospace);
+}
+
+.duro-checkbox:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.duro-checkbox-error {
+  border-style: dashed;
+}
+
+.duro-checkbox-error:focus {
+  outline-color: var(--duro-color-text);
+}
+
+
+/**
+ * Switch Component Styles
+ * Cyberpunk Tech Interface - Binary toggle switches
+ */
+
+.duro-switch {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.duro-switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.duro-switch-slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: transparent;
+  border: 1px solid var(--duro-color-text);
+  transition: all 0.2s ease;
+  font-family: var(--duro-font-monospace);
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: var(--duro-color-secondary);
+  padding: 0 0.25rem;
+}
+
+.duro-switch-slider::before {
+  content: '';
+  position: absolute;
+  background-color: var(--duro-color-secondary);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.duro-switch-slider::after {
+  content: '0';
+  position: absolute;
+  right: 0.25rem;
+  font-family: var(--duro-font-monospace);
+}
+
+/* Sizes */
+.duro-switch-sm .duro-switch-slider {
+  width: 2rem;
+  height: 1rem;
+}
+
+.duro-switch-sm .duro-switch-slider::before {
+  width: 0.625rem;
+  height: 0.625rem;
+  left: 0.1875rem;
+  top: 0.1875rem;
+}
+
+.duro-switch-md .duro-switch-slider {
+  width: 2.5rem;
+  height: 1.25rem;
+}
+
+.duro-switch-md .duro-switch-slider::before {
+  width: 0.875rem;
+  height: 0.875rem;
+  left: 0.1875rem;
+  top: 0.1875rem;
+}
+
+.duro-switch-lg .duro-switch-slider {
+  width: 3rem;
+  height: 1.5rem;
+}
+
+.duro-switch-lg .duro-switch-slider::before {
+  width: 1.125rem;
+  height: 1.125rem;
+  left: 0.1875rem;
+  top: 0.1875rem;
+}
+
+/* Checked state */
+.duro-switch-input:checked + .duro-switch-slider {
+  background-color: var(--duro-color-text);
+}
+
+.duro-switch-input:checked + .duro-switch-slider::before {
+  background-color: var(--duro-color-background);
+}
+
+.duro-switch-input:checked + .duro-switch-slider::after {
+  content: '1';
+  right: auto;
+  left: 0.25rem;
+  color: var(--duro-color-background);
+}
+
+.duro-switch-sm .duro-switch-input:checked + .duro-switch-slider::before {
+  transform: translateX(1rem);
+}
+
+.duro-switch-md .duro-switch-input:checked + .duro-switch-slider::before {
+  transform: translateX(1.25rem);
+}
+
+.duro-switch-lg .duro-switch-input:checked + .duro-switch-slider::before {
+  transform: translateX(1.5rem);
+}
+
+/* Focus state */
+.duro-switch-input:focus + .duro-switch-slider {
+  outline: 1px dotted var(--duro-color-text);
+  outline-offset: 2px;
+}
+
+/* Hover state */
+.duro-switch:hover .duro-switch-slider {
+  box-shadow: inset 0 0 0 1px var(--duro-color-text);
+}
+
+/* Disabled state */
+.duro-switch-input:disabled + .duro-switch-slider {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.duro-switch:has(.duro-switch-input:disabled) {
+  cursor: not-allowed;
+}
+
+/* Error state */
+.duro-switch-error .duro-switch-slider {
+  border-style: dashed;
+}
+
+
+/**
+ * Badge Component Styles
+ * Cyberpunk Tech Interface - Terminal-style status badges
+ */
+
+.duro-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--duro-color-text);
+  font-family: var(--duro-font-monospace);
+  font-weight: 400;
+  line-height: 1;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Sizes */
+.duro-badge-sm {
+  font-size: var(--duro-font-size-xs);
+  padding: var(--duro-space-1) var(--duro-space-2);
+}
+
+.duro-badge-md {
+  font-size: var(--duro-font-size-xs);
+  padding: var(--duro-space-1) var(--duro-space-3);
+}
+
+.duro-badge-lg {
+  font-size: var(--duro-font-size-sm);
+  padding: var(--duro-space-2) var(--duro-space-4);
+}
+
+/* Variants */
+.duro-badge-default {
+  background-color: transparent;
+  color: var(--duro-color-text);
+  border-color: var(--duro-color-text);
+}
+
+.duro-badge-primary {
+  background-color: var(--duro-color-text);
+  color: var(--duro-color-background);
+  border-color: var(--duro-color-text);
+}
+
+.duro-badge-secondary {
+  background-color: var(--duro-color-secondary);
+  color: var(--duro-color-background);
+  border-color: var(--duro-color-secondary);
+}
+
+.duro-badge-success {
+  background-color: transparent;
+  color: var(--duro-color-text);
+  border-color: var(--duro-color-text);
+}
+
+.duro-badge-success::before {
+  content: '✓';
+  margin-right: var(--duro-space-1);
+}
+
+.duro-badge-warning {
+  background-color: transparent;
+  color: var(--duro-color-text);
+  border-color: var(--duro-color-text);
+  border-style: dashed;
+}
+
+.duro-badge-warning::before {
+  content: '!';
+  margin-right: var(--duro-space-1);
+  font-weight: 700;
+}
+
+.duro-badge-error {
+  background-color: transparent;
+  color: var(--duro-color-text);
+  border-color: var(--duro-color-text);
+  border-style: dashed;
+}
+
+.duro-badge-error::before {
+  content: '×';
+  margin-right: var(--duro-space-1);
+  font-weight: 700;
+}
+
+.duro-badge-outline {
+  background-color: transparent;
+  border: 1px solid var(--duro-color-secondary);
+  color: var(--duro-color-secondary);
+}
+
+/* HUD style badge with corner brackets */
+.duro-badge-hud {
+  background-color: transparent;
+  color: var(--duro-color-text);
+  border: none;
+  position: relative;
+  padding: var(--duro-space-1) var(--duro-space-3);
+}
+
+.duro-badge-hud::before,
+.duro-badge-hud::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+}
+
+.duro-badge-hud::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+
+.duro-badge-hud::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}
+
+
+/**
+ * Separator Component Styles
+ * Cyberpunk Tech Interface - Visual dividers
+ */
+
+.duro-separator {
+  flex-shrink: 0;
+  background-color: var(--duro-color-text);
+}
+
+.duro-separator-horizontal {
+  height: 1px;
+  width: 100%;
+}
+
+.duro-separator-vertical {
+  width: 1px;
+  height: 100%;
+  min-height: 1rem;
+}
+
+/* Dashed variant */
+.duro-separator-dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--duro-color-text),
+    var(--duro-color-text) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.duro-separator-vertical.duro-separator-dashed {
+  background: repeating-linear-gradient(
+    180deg,
+    var(--duro-color-text),
+    var(--duro-color-text) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+/* Muted variant */
+.duro-separator-muted {
+  background-color: var(--duro-color-secondary);
+}
+
+
+/**
+ * Avatar Component Styles
+ * Cyberpunk Tech Interface - User identification displays
+ */
+
+.duro-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--duro-color-muted);
+  color: var(--duro-color-text);
+  flex-shrink: 0;
+  border: 1px solid var(--duro-color-text);
+  transition: all 0.15s ease;
+}
+
+.duro-avatar:hover {
+  box-shadow: 0 0 0 1px var(--duro-color-text);
+}
+
+/* Sizes */
+.duro-avatar-sm {
+  width: 2rem;
+  height: 2rem;
+  font-size: var(--duro-font-size-xs);
+}
+
+.duro-avatar-md {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: var(--duro-font-size-sm);
+}
+
+.duro-avatar-lg {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: var(--duro-font-size-md);
+}
+
+.duro-avatar-xl {
+  width: 5rem;
+  height: 5rem;
+  font-size: var(--duro-font-size-xl);
+}
+
+.duro-avatar-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.duro-avatar-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-family: var(--duro-font-monospace);
+  font-weight: 400;
+  text-transform: uppercase;
+  background: var(--duro-color-muted);
+  color: var(--duro-color-text);
+  letter-spacing: 0.05em;
+  z-index: 0;
+}
+
+/* Variant: Rounded - not used in cyberpunk, but keep for compatibility */
+.duro-avatar-rounded {
+  border-radius: 0;
+}
+
+/* Variant: Circle - not used in cyberpunk, but keep for compatibility */
+.duro-avatar-circle {
+  border-radius: 0;
+}
+
+/* Status indicator */
+.duro-avatar-status {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--duro-color-background);
+  background-color: var(--duro-color-muted);
+}
+
+.duro-avatar-status-online {
+  background-color: var(--duro-color-text);
+}
+
+.duro-avatar-status-offline {
+  background-color: transparent;
+  border-style: dashed;
+}
+
+.duro-avatar-status-busy {
+  background-color: var(--duro-color-secondary);
+}
+
+/* Group avatars (stacked) */
+.duro-avatar-group {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.duro-avatar-group .duro-avatar {
+  margin-left: -0.5rem;
+  border: 1px solid var(--duro-color-background);
+}
+
+.duro-avatar-group .duro-avatar:last-child {
+  margin-left: 0;
+}
+
+.duro-avatar-group .duro-avatar:hover {
+  z-index: 1;
+}
+
+
+/**
+ * Skeleton Component Styles
+ * Cyberpunk Tech Interface - Data loading placeholders
+ */
+
+.duro-skeleton {
+  background: var(--duro-color-muted);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Scanning line effect */
+.duro-skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--duro-color-secondary) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: duro-skeleton-scan 1.5s ease-in-out infinite;
+  opacity: 0.3;
+}
+
+@keyframes duro-skeleton-scan {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* All radius variants map to 0 for cyberpunk */
+.duro-skeleton-radius-none,
+.duro-skeleton-radius-sm,
+.duro-skeleton-radius-md,
+.duro-skeleton-radius-lg,
+.duro-skeleton-radius-full {
+  border-radius: 0;
+}
+
+/* Optional border variant */
+.duro-skeleton-bordered {
+  border: 1px solid var(--duro-color-secondary);
+}
+
+/* Glitch variant */
+.duro-skeleton-glitch {
+  animation: duro-skeleton-glitch 2s ease-in-out infinite;
+}
+
+@keyframes duro-skeleton-glitch {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  52% {
+    opacity: 1;
+  }
+  54% {
+    opacity: 0.7;
+  }
+  56% {
+    opacity: 1;
+  }
+}
+
+
+/**
+ * Alert Component Styles
+ * Cyberpunk Tech Interface - Terminal-style alerts
+ */
+
+.duro-alert {
+  position: relative;
+  padding: var(--duro-space-4);
+  border: 1px solid var(--duro-color-text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--duro-space-2);
+  background-color: var(--duro-color-background);
+}
+
+/* Corner bracket decorations */
+.duro-alert::before,
+.duro-alert::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.duro-alert::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.duro-alert::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Variants */
+.duro-alert-default {
+  border-color: var(--duro-color-secondary);
+  color: var(--duro-color-text);
+}
+
+.duro-alert-default::before,
+.duro-alert-default::after {
+  border-color: var(--duro-color-secondary);
+}
+
+.duro-alert-info {
+  border-color: var(--duro-color-text);
+  color: var(--duro-color-text);
+}
+
+.duro-alert-info::before {
+  content: '[i]';
+  position: absolute;
+  top: var(--duro-space-4);
+  left: var(--duro-space-4);
+  width: auto;
+  height: auto;
+  border: none;
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  font-weight: 700;
+}
+
+.duro-alert-success {
+  border-color: var(--duro-color-text);
+  color: var(--duro-color-text);
+}
+
+.duro-alert-success::before {
+  content: '[✓]';
+  position: absolute;
+  top: var(--duro-space-4);
+  left: var(--duro-space-4);
+  width: auto;
+  height: auto;
+  border: none;
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  font-weight: 700;
+}
+
+.duro-alert-warning {
+  border-color: var(--duro-color-text);
+  border-style: dashed;
+  color: var(--duro-color-text);
+}
+
+.duro-alert-warning::before {
+  content: '[!]';
+  position: absolute;
+  top: var(--duro-space-4);
+  left: var(--duro-space-4);
+  width: auto;
+  height: auto;
+  border: none;
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  font-weight: 700;
+}
+
+.duro-alert-warning::after {
+  border-style: dashed;
+}
+
+.duro-alert-error {
+  border-color: var(--duro-color-text);
+  border-style: dashed;
+  color: var(--duro-color-text);
+}
+
+.duro-alert-error::before {
+  content: '[×]';
+  position: absolute;
+  top: var(--duro-space-4);
+  left: var(--duro-space-4);
+  width: auto;
+  height: auto;
+  border: none;
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  font-weight: 700;
+}
+
+.duro-alert-error::after {
+  border-style: dashed;
+}
+
+/* Alert with icons have left padding */
+.duro-alert-info,
+.duro-alert-success,
+.duro-alert-warning,
+.duro-alert-error {
+  padding-left: calc(var(--duro-space-4) + 2rem);
+}
+
+.duro-alert-title {
+  margin: 0;
+  font-family: var(--duro-font-heading);
+  font-size: var(--duro-font-size-sm);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: var(--duro-line-height-tight);
+}
+
+.duro-alert-description {
+  font-size: var(--duro-font-size-sm);
+  line-height: var(--duro-line-height-normal);
+  opacity: 0.8;
+}
+
+
+/**
+ * Progress Component Styles
+ * Cyberpunk Tech Interface - Data loading bars
+ */
+
+.duro-progress {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background-color: transparent;
+  border: 1px solid var(--duro-color-text);
+}
+
+.duro-progress-indicator {
+  height: 100%;
+  transition: width 0.3s ease;
+  background-color: var(--duro-color-text);
+}
+
+/* Sizes */
+.duro-progress-sm {
+  height: 0.25rem;
+}
+
+.duro-progress-md {
+  height: 0.5rem;
+}
+
+.duro-progress-lg {
+  height: 0.75rem;
+}
+
+/* Variants */
+.duro-progress-default .duro-progress-indicator {
+  background-color: var(--duro-color-text);
+}
+
+.duro-progress-primary .duro-progress-indicator {
+  background-color: var(--duro-color-text);
+}
+
+.duro-progress-success .duro-progress-indicator {
+  background-color: var(--duro-color-text);
+}
+
+.duro-progress-warning .duro-progress-indicator {
+  background-color: var(--duro-color-secondary);
+}
+
+.duro-progress-error .duro-progress-indicator {
+  background-color: var(--duro-color-text);
+  /* Striped pattern for error */
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    var(--duro-color-background) 2px,
+    var(--duro-color-background) 4px
+  );
+}
+
+/* Indeterminate state - scanning effect */
+.duro-progress-indeterminate .duro-progress-indicator {
+  width: 30%;
+  animation: duro-progress-scan 1.5s ease-in-out infinite;
+}
+
+@keyframes duro-progress-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(333%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Segmented variant - data blocks */
+.duro-progress-segmented {
+  display: flex;
+  gap: 2px;
+  border: none;
+  background: transparent;
+}
+
+.duro-progress-segmented .duro-progress-indicator {
+  flex: 1;
+  border: 1px solid var(--duro-color-text);
+  background: transparent;
+}
+
+.duro-progress-segmented .duro-progress-indicator.active {
+  background: var(--duro-color-text);
+}
+
+
+/**
+ * Tooltip Component Styles
+ * Cyberpunk Tech Interface - HUD-style tooltips
+ */
+
+.duro-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.duro-tooltip-content {
+  position: absolute;
+  z-index: 1000;
+  padding: var(--duro-space-2) var(--duro-space-3);
+  background-color: var(--duro-color-text);
+  color: var(--duro-color-background);
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  line-height: var(--duro-line-height-tight);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+  border: 1px solid var(--duro-color-text);
+}
+
+/* Corner bracket decorations */
+.duro-tooltip-content::before,
+.duro-tooltip-content::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-color: var(--duro-color-background);
+  border-style: solid;
+}
+
+.duro-tooltip-content::before {
+  top: 2px;
+  left: 2px;
+  border-width: 1px 0 0 1px;
+}
+
+.duro-tooltip-content::after {
+  bottom: 2px;
+  right: 2px;
+  border-width: 0 1px 1px 0;
+}
+
+.duro-tooltip-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Position: Top */
+.duro-tooltip-top {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Position: Bottom */
+.duro-tooltip-bottom {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Position: Left */
+.duro-tooltip-left {
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Position: Right */
+.duro-tooltip-right {
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Arrow indicators - using text characters */
+.duro-tooltip-top::marker,
+.duro-tooltip-bottom::marker,
+.duro-tooltip-left::marker,
+.duro-tooltip-right::marker {
+  content: none;
+}
+
+
+/**
+ * Tabs Component Styles
+ * Cyberpunk Tech Interface - Terminal-style navigation tabs
+ */
+
+.duro-tabs {
+  width: 100%;
+}
+
+.duro-tabs-list {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--duro-color-text);
+  margin-bottom: var(--duro-space-4);
+}
+
+.duro-tabs-trigger {
+  padding: var(--duro-space-2) var(--duro-space-4);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  color: var(--duro-color-secondary);
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  margin-bottom: -1px;
+}
+
+.duro-tabs-trigger:hover {
+  color: var(--duro-color-text);
+  background-color: var(--duro-color-muted);
+}
+
+.duro-tabs-trigger:focus {
+  outline: 1px dotted var(--duro-color-text);
+  outline-offset: -2px;
+}
+
+.duro-tabs-trigger-active {
+  color: var(--duro-color-text);
+  background-color: var(--duro-color-background);
+  border: 1px solid var(--duro-color-text);
+  border-bottom-color: var(--duro-color-background);
+}
+
+.duro-tabs-trigger-active::before {
+  content: '>';
+  margin-right: var(--duro-space-1);
+}
+
+.duro-tabs-content {
+  padding: var(--duro-space-4) 0;
+  animation: duro-tabs-fade-in 0.15s ease;
+}
+
+@keyframes duro-tabs-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+
+/**
+ * Accordion Component Styles
+ * Cyberpunk Tech Interface - Expandable data panels
+ */
+
+.duro-accordion {
+  border: 1px solid var(--duro-color-text);
+  overflow: hidden;
+}
+
+.duro-accordion-item {
+  border-bottom: 1px solid var(--duro-color-text);
+}
+
+.duro-accordion-item:last-child {
+  border-bottom: none;
+}
+
+.duro-accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--duro-space-4);
+  background: transparent;
+  border: none;
+  color: var(--duro-color-text);
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-sm);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.duro-accordion-trigger:hover {
+  background-color: var(--duro-color-muted);
+}
+
+.duro-accordion-trigger:focus {
+  outline: 1px dotted var(--duro-color-text);
+  outline-offset: -2px;
+}
+
+.duro-accordion-chevron {
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-sm);
+  transition: transform 0.15s ease;
+}
+
+.duro-accordion-chevron::before {
+  content: '[+]';
+}
+
+.duro-accordion-trigger-open .duro-accordion-chevron::before {
+  content: '[-]';
+}
+
+.duro-accordion-content {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.2s ease;
+  border-top: 1px dashed var(--duro-color-secondary);
+}
+
+.duro-accordion-content-open {
+  max-height: 1000px;
+}
+
+.duro-accordion-content-inner {
+  padding: var(--duro-space-4);
+  color: var(--duro-color-text);
+  font-size: var(--duro-font-size-sm);
+  line-height: var(--duro-line-height-normal);
+}
+
+
+/**
+ * Dialog Component Styles
+ * Cyberpunk Tech Interface - HUD-style modal dialogs
+ */
+
+.duro-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  animation: duro-dialog-overlay-fade-in 0.15s ease;
+}
+
+.duro-dialog-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  background-color: var(--duro-color-background);
+  border: 1px solid var(--duro-color-text);
+  padding: var(--duro-space-6);
+  max-width: 500px;
+  width: calc(100% - 2rem);
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  animation: duro-dialog-content-slide-in 0.15s ease;
+}
+
+/* Corner bracket decorations */
+.duro-dialog-content::before,
+.duro-dialog-content::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.duro-dialog-content::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.duro-dialog-content::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+.duro-dialog-close {
+  position: absolute;
+  top: var(--duro-space-4);
+  right: var(--duro-space-4);
+  background: transparent;
+  border: 1px solid var(--duro-color-text);
+  color: var(--duro-color-text);
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: var(--duro-space-1) var(--duro-space-2);
+  line-height: 1;
+}
+
+.duro-dialog-close:hover {
+  background: var(--duro-color-text);
+  color: var(--duro-color-background);
+}
+
+.duro-dialog-close:focus {
+  outline: 1px dotted var(--duro-color-text);
+  outline-offset: 2px;
+}
+
+.duro-dialog-header {
+  margin-bottom: var(--duro-space-4);
+  padding-right: var(--duro-space-8);
+}
+
+.duro-dialog-footer {
+  margin-top: var(--duro-space-6);
+  display: flex;
+  gap: var(--duro-space-3);
+  justify-content: flex-end;
+  padding-top: var(--duro-space-4);
+  border-top: 1px dashed var(--duro-color-secondary);
+}
+
+.duro-dialog-title {
+  margin: 0;
+  font-family: var(--duro-font-heading);
+  font-size: var(--duro-font-size-lg);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: var(--duro-line-height-tight);
+  color: var(--duro-color-text);
+}
+
+.duro-dialog-description {
+  margin: var(--duro-space-2) 0 0;
+  font-size: var(--duro-font-size-sm);
+  line-height: var(--duro-line-height-normal);
+  color: var(--duro-color-secondary);
+}
+
+.duro-dialog-trigger {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+@keyframes duro-dialog-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes duro-dialog-content-slide-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+
+/**
+ * Text Component Styles
+ * Cyberpunk Tech Interface - Terminal-style typography
+ */
+
+.duro-text {
+  font-family: var(--duro-font-body);
+  line-height: var(--duro-line-height-normal);
+  color: var(--duro-color-text);
+}
+
+/* Variants */
+.duro-text-body {
+  font-family: var(--duro-font-body);
+}
+
+.duro-text-caption {
+  opacity: 0.7;
+  line-height: var(--duro-line-height-tight);
+  color: var(--duro-color-secondary);
+}
+
+.duro-text-label {
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: var(--duro-line-height-tight);
+}
+
+.duro-text-overline {
+  text-transform: uppercase;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  font-size: 0.75em;
+  line-height: var(--duro-line-height-tight);
+  color: var(--duro-color-secondary);
+}
+
+.duro-text-code {
+  font-family: var(--duro-font-monospace);
+  padding: 0.125rem 0.375rem;
+  background-color: var(--duro-color-muted);
+  border: 1px solid var(--duro-color-text);
+  font-size: 0.9em;
+}
+
+/* Sizes */
+.duro-text-xs {
+  font-size: var(--duro-font-size-xs);
+}
+
+.duro-text-sm {
+  font-size: var(--duro-font-size-sm);
+}
+
+.duro-text-md {
+  font-size: var(--duro-font-size-md);
+}
+
+.duro-text-lg {
+  font-size: var(--duro-font-size-lg);
+}
+
+.duro-text-xl {
+  font-size: var(--duro-font-size-xl);
+}
+
+/* Weights - lighter for cyberpunk */
+.duro-text-normal {
+  font-weight: 300;
+}
+
+.duro-text-medium {
+  font-weight: 400;
+}
+
+.duro-text-semibold {
+  font-weight: 500;
+}
+
+.duro-text-bold {
+  font-weight: 600;
+}
+
+/* Glitch effect */
+.duro-text-glitch {
+  position: relative;
+}
+
+.duro-text-glitch:hover {
+  animation: text-glitch 0.3s ease;
+}
+
+@keyframes text-glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-1px, 1px); }
+  40% { transform: translate(-1px, -1px); }
+  60% { transform: translate(1px, 1px); }
+  80% { transform: translate(1px, -1px); }
+}
+
+
+/**
+ * Heading Component Styles
+ * Cyberpunk Tech Interface - Terminal-style headings
+ */
+
+.duro-heading {
+  font-family: var(--duro-font-heading);
+  line-height: var(--duro-line-height-tight);
+  color: var(--duro-color-text);
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Level-based sizes */
+.duro-heading-1 {
+  font-size: var(--duro-font-size-3xl);
+  letter-spacing: 0.1em;
+  font-weight: 300;
+}
+
+.duro-heading-2 {
+  font-size: var(--duro-font-size-2xl);
+  letter-spacing: 0.08em;
+  font-weight: 300;
+}
+
+.duro-heading-3 {
+  font-size: var(--duro-font-size-xl);
+  letter-spacing: 0.05em;
+}
+
+.duro-heading-4 {
+  font-size: var(--duro-font-size-lg);
+  letter-spacing: 0.05em;
+}
+
+.duro-heading-5 {
+  font-size: var(--duro-font-size-md);
+  letter-spacing: 0.05em;
+}
+
+.duro-heading-6 {
+  font-size: var(--duro-font-size-sm);
+  letter-spacing: 0.1em;
+}
+
+/* Variants */
+.duro-heading-display {
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: 0.15em;
+}
+
+.duro-heading-heading {
+  font-weight: 400;
+}
+
+.duro-heading-subheading {
+  font-weight: 400;
+  color: var(--duro-color-secondary);
+}
+
+/* Prefix decorators */
+.duro-heading-decorated::before {
+  content: '//';
+  margin-right: var(--duro-space-2);
+  color: var(--duro-color-secondary);
+}
+
+/* Glitch effect on hover */
+.duro-heading-glitch:hover {
+  animation: heading-glitch 0.3s ease;
+}
+
+@keyframes heading-glitch {
+  0%, 100% { transform: translate(0); opacity: 1; }
+  20% { transform: translate(-2px, 2px); opacity: 0.8; }
+  40% { transform: translate(-2px, -2px); opacity: 1; }
+  60% { transform: translate(2px, 2px); opacity: 0.8; }
+  80% { transform: translate(2px, -2px); opacity: 1; }
+}
+
+
+/**
+ * Paragraph Component Styles
+ * Cyberpunk Tech Interface - Body text styling
+ */
+
+.duro-paragraph {
+  font-family: var(--duro-font-body);
+  line-height: var(--duro-line-height-relaxed);
+  color: var(--duro-color-text);
+  margin: 0;
+}
+
+/* Sizes */
+.duro-paragraph-sm {
+  font-size: var(--duro-font-size-sm);
+}
+
+.duro-paragraph-md {
+  font-size: var(--duro-font-size-md);
+}
+
+.duro-paragraph-lg {
+  font-size: var(--duro-font-size-lg);
+}
+
+/* Variants */
+.duro-paragraph-default {
+  opacity: 1;
+}
+
+.duro-paragraph-lead {
+  font-size: var(--duro-font-size-lg);
+  font-weight: 300;
+  line-height: var(--duro-line-height-normal);
+}
+
+.duro-paragraph-muted {
+  color: var(--duro-color-secondary);
+}
+
+/* Terminal-style log entry */
+.duro-paragraph-log {
+  font-family: var(--duro-font-monospace);
+  padding-left: var(--duro-space-4);
+  border-left: 1px solid var(--duro-color-secondary);
+}
+
+.duro-paragraph-log::before {
+  content: '>';
+  position: absolute;
+  left: var(--duro-space-1);
+  color: var(--duro-color-secondary);
+}
+
+
+/**
+ * Cyberpunk Utility Classes
+ * Additional decorative and utility styles for the tech interface
+ */
+
+/* ==========================================================================
+   Corner Bracket Decorations
+   ========================================================================== */
+
+.duro-brackets {
+  position: relative;
+}
+
+.duro-brackets::before,
+.duro-brackets::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--duro-color-text);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.duro-brackets::before {
+  top: 0;
+  left: 0;
+  border-width: 2px 0 0 2px;
+}
+
+.duro-brackets::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 2px 2px 0;
+}
+
+.duro-brackets-sm::before,
+.duro-brackets-sm::after {
+  width: 6px;
+  height: 6px;
+  border-width: 1px;
+}
+
+.duro-brackets-sm::before {
+  border-width: 1px 0 0 1px;
+}
+
+.duro-brackets-sm::after {
+  border-width: 0 1px 1px 0;
+}
+
+.duro-brackets-lg::before,
+.duro-brackets-lg::after {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+}
+
+.duro-brackets-lg::before {
+  border-width: 3px 0 0 3px;
+}
+
+.duro-brackets-lg::after {
+  border-width: 0 3px 3px 0;
+}
+
+/* ==========================================================================
+   Scanline Effect
+   ========================================================================== */
+
+.duro-scanlines {
+  position: relative;
+  overflow: hidden;
+}
+
+.duro-scanlines::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ==========================================================================
+   Glitch Effects
+   ========================================================================== */
+
+.duro-glitch {
+  animation: duro-glitch-effect 3s infinite;
+}
+
+@keyframes duro-glitch-effect {
+  0%, 100% {
+    transform: translate(0);
+    filter: none;
+  }
+  2% {
+    transform: translate(-2px, 0);
+    filter: hue-rotate(90deg);
+  }
+  4% {
+    transform: translate(2px, 0);
+    filter: none;
+  }
+  6% {
+    transform: translate(0);
+  }
+  50% {
+    transform: translate(0);
+  }
+  52% {
+    transform: translate(1px, -1px);
+  }
+  54% {
+    transform: translate(-1px, 1px);
+  }
+  56% {
+    transform: translate(0);
+  }
+}
+
+.duro-glitch-text {
+  position: relative;
+}
+
+.duro-glitch-text:hover::before,
+.duro-glitch-text:hover::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.duro-glitch-text:hover::before {
+  animation: duro-glitch-text-1 0.3s infinite;
+  color: var(--duro-color-text);
+  z-index: -1;
+}
+
+.duro-glitch-text:hover::after {
+  animation: duro-glitch-text-2 0.3s infinite;
+  color: var(--duro-color-secondary);
+  z-index: -2;
+}
+
+@keyframes duro-glitch-text-1 {
+  0%, 100% { clip-path: inset(0 0 80% 0); transform: translate(-2px, 0); }
+  25% { clip-path: inset(20% 0 60% 0); transform: translate(2px, 0); }
+  50% { clip-path: inset(40% 0 40% 0); transform: translate(-2px, 0); }
+  75% { clip-path: inset(60% 0 20% 0); transform: translate(2px, 0); }
+}
+
+@keyframes duro-glitch-text-2 {
+  0%, 100% { clip-path: inset(80% 0 0 0); transform: translate(2px, 0); }
+  25% { clip-path: inset(60% 0 20% 0); transform: translate(-2px, 0); }
+  50% { clip-path: inset(40% 0 40% 0); transform: translate(2px, 0); }
+  75% { clip-path: inset(20% 0 60% 0); transform: translate(-2px, 0); }
+}
+
+/* ==========================================================================
+   Terminal/Code Style Text
+   ========================================================================== */
+
+.duro-terminal {
+  font-family: var(--duro-font-monospace);
+  background: var(--duro-color-muted);
+  border: 1px solid var(--duro-color-secondary);
+  padding: var(--duro-space-4);
+}
+
+.duro-terminal-line {
+  display: flex;
+  gap: var(--duro-space-2);
+  padding: var(--duro-space-1) 0;
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-sm);
+}
+
+.duro-terminal-prompt {
+  color: var(--duro-color-secondary);
+}
+
+.duro-terminal-output {
+  color: var(--duro-color-text);
+}
+
+.duro-terminal-error {
+  color: var(--duro-color-text);
+  border-left: 2px solid var(--duro-color-text);
+  padding-left: var(--duro-space-2);
+}
+
+.duro-terminal-success {
+  color: var(--duro-color-text);
+}
+
+.duro-terminal-warning {
+  color: var(--duro-color-secondary);
+  border-left: 2px dashed var(--duro-color-secondary);
+  padding-left: var(--duro-space-2);
+}
+
+/* ==========================================================================
+   Data Display Elements
+   ========================================================================== */
+
+.duro-stat-block {
+  padding: var(--duro-space-4);
+  border: 1px solid var(--duro-color-text);
+  position: relative;
+}
+
+.duro-stat-label {
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--duro-color-secondary);
+  margin-bottom: var(--duro-space-1);
+}
+
+.duro-stat-value {
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-2xl);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+}
+
+.duro-stat-unit {
+  font-size: var(--duro-font-size-sm);
+  color: var(--duro-color-secondary);
+  margin-left: var(--duro-space-1);
+}
+
+.duro-stat-trend {
+  font-size: var(--duro-font-size-xs);
+  margin-top: var(--duro-space-1);
+}
+
+.duro-stat-trend-up {
+  color: var(--duro-color-text);
+}
+
+.duro-stat-trend-down {
+  color: var(--duro-color-secondary);
+}
+
+/* ==========================================================================
+   Data Row/Table Styles
+   ========================================================================== */
+
+.duro-data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--duro-space-2) 0;
+  border-bottom: 1px dashed var(--duro-color-secondary);
+  font-family: var(--duro-font-monospace);
+  font-size: var(--duro-font-size-sm);
+}
+
+.duro-data-row:last-child {
+  border-bottom: none;
+}
+
+.duro-data-label {
+  color: var(--duro-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.duro-data-value {
+  color: var(--duro-color-text);
+}
+
+.duro-data-value-highlight {
+  color: var(--duro-color-text);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Status Indicators
+   ========================================================================== */
+
+.duro-status-dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+}
+
+.duro-status-active {
+  background: var(--duro-color-text);
+}
+
+.duro-status-standby {
+  background: var(--duro-color-secondary);
+  border: 1px dashed var(--duro-color-text);
+}
+
+.duro-status-offline {
+  background: transparent;
+  border: 1px dashed var(--duro-color-secondary);
+}
+
+.duro-status-error {
+  background: var(--duro-color-text);
+  animation: duro-status-blink 1s infinite;
+}
+
+@keyframes duro-status-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ==========================================================================
+   Decorative Patterns
+   ========================================================================== */
+
+.duro-grid-pattern {
+  background-image:
+    linear-gradient(var(--duro-color-secondary) 1px, transparent 1px),
+    linear-gradient(90deg, var(--duro-color-secondary) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: -1px -1px;
+  opacity: 0.1;
+}
+
+.duro-diagonal-stripes {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    var(--duro-color-secondary) 4px,
+    var(--duro-color-secondary) 5px
+  );
+  opacity: 0.1;
+}
+
+.duro-dots-pattern {
+  background-image: radial-gradient(var(--duro-color-secondary) 1px, transparent 1px);
+  background-size: 8px 8px;
+  opacity: 0.3;
+}
+
+/* ==========================================================================
+   Typography Utilities
+   ========================================================================== */
+
+.duro-mono {
+  font-family: var(--duro-font-monospace);
+}
+
+.duro-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.duro-prefix::before {
+  content: '// ';
+  color: var(--duro-color-secondary);
+}
+
+.duro-cursor::after {
+  content: '█';
+  animation: duro-cursor-blink 1s infinite;
+}
+
+@keyframes duro-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ==========================================================================
+   Interactive Hover Effects
+   ========================================================================== */
+
+.duro-hover-glow:hover {
+  box-shadow: var(--duro-shadow-glow);
+}
+
+.duro-hover-expand {
+  transition: transform 0.15s ease;
+}
+
+.duro-hover-expand:hover {
+  transform: scale(1.02);
+}
+
+.duro-hover-invert:hover {
+  background: var(--duro-color-text);
+  color: var(--duro-color-background);
+}

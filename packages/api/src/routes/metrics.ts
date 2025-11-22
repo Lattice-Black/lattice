@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { MetricsService } from '../services/metrics-service';
-import { optionalAuth, authenticateSupabase, AuthenticatedRequest } from '../middleware/auth';
+import { optionalAuth, authenticateApiKey, AuthenticatedRequest } from '../middleware/auth';
 
 /**
  * Metrics routes for runtime statistics
@@ -76,9 +76,9 @@ export const createMetricsRouter = (): Router => {
   /**
    * GET /metrics/stats
    * Get aggregated service statistics (user-scoped)
-   * Requires Supabase JWT authentication
+   * Requires API key authentication
    */
-  router.get('/stats', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+  router.get('/stats', authenticateApiKey, async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({
@@ -108,9 +108,9 @@ export const createMetricsRouter = (): Router => {
   /**
    * GET /metrics/connections
    * Get inter-service connection statistics (user-scoped)
-   * Requires Supabase JWT authentication
+   * Requires API key authentication
    */
-  router.get('/connections', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+  router.get('/connections', authenticateApiKey, async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({
@@ -139,9 +139,9 @@ export const createMetricsRouter = (): Router => {
   /**
    * GET /metrics/recent/:serviceName
    * Get recent metrics for a specific service (user-scoped)
-   * Requires Supabase JWT authentication
+   * Requires API key authentication
    */
-  router.get('/recent/:serviceName', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+  router.get('/recent/:serviceName', authenticateApiKey, async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({

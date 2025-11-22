@@ -1,8 +1,11 @@
+'use client';
+
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/jsx-no-comment-textnodes */
 import Link from 'next/link';
 import { DotGrid } from '@/components/DotGrid';
 import { PublicNav } from '@/components/PublicNav';
+import { Button, Card, Heading, Text } from '@duro/core';
 
 export default function DocsPage() {
   return (
@@ -17,19 +20,19 @@ export default function DocsPage() {
           <div className="mx-auto max-w-4xl">
             {/* Page Header */}
             <div className="mb-16">
-              <h1 className="mb-4 text-5xl font-bold uppercase tracking-tight text-white">
+              <Heading level={1} className="mb-4 text-5xl uppercase tracking-tight">
                 Documentation
-              </h1>
-              <p className="font-mono text-sm text-gray-500">
+              </Heading>
+              <Text size="sm" className="text-gray-500">
                 Complete guide to integrating Lattice into your microservices architecture
-              </p>
+              </Text>
             </div>
 
             {/* Table of Contents */}
-            <nav className="mb-16 border border-gray-800 bg-black/50 backdrop-blur-sm p-8">
-              <h2 className="mb-4 font-mono text-sm uppercase tracking-wider text-gray-500">
+            <Card className="mb-16 p-8">
+              <Text size="sm" className="mb-4 uppercase tracking-wider text-gray-500">
                 Contents
-              </h2>
+              </Text>
               <ul className="space-y-2 font-mono text-sm text-gray-400">
                 <li>
                   <a href="#introduction" className="hover:text-white transition-colors">
@@ -62,38 +65,38 @@ export default function DocsPage() {
                   </a>
                 </li>
               </ul>
-            </nav>
+            </Card>
 
             {/* Introduction */}
             <section id="introduction" className="mb-16">
-              <h2 className="mb-6 text-3xl font-bold uppercase tracking-tight text-white">
+              <Heading level={2} className="mb-6 text-3xl uppercase tracking-tight">
                 Introduction
-              </h2>
-              <div className="space-y-4 font-mono text-sm text-gray-500">
-                <p>
+              </Heading>
+              <div className="space-y-4">
+                <Text size="sm" className="text-gray-500">
                   Lattice is a service discovery platform that automatically maps your microservices architecture.
                   Drop-in plugins analyze your applications at runtime, discovering routes, dependencies, and service relationships.
-                </p>
-                <p>
+                </Text>
+                <Text size="sm" className="text-gray-500">
                   No manual configuration required. Lattice plugins integrate with your existing framework in minutes,
                   providing real-time visibility into your entire service ecosystem.
-                </p>
+                </Text>
               </div>
             </section>
 
             {/* Quick Start */}
             <section id="quick-start" className="mb-16">
-              <h2 className="mb-6 text-3xl font-bold uppercase tracking-tight text-white">
+              <Heading level={2} className="mb-6 text-3xl uppercase tracking-tight">
                 Quick Start
-              </h2>
+              </Heading>
               <div className="space-y-6">
                 <div>
-                  <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                  <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                     1. Create Account
-                  </h3>
-                  <p className="mb-3 font-mono text-sm text-gray-500">
+                  </Heading>
+                  <Text size="sm" className="mb-3 text-gray-500">
                     Sign up for a Lattice account and get your API key:
-                  </p>
+                  </Text>
                   <div className="border border-gray-800 bg-black p-4">
                     <code className="font-mono text-xs text-gray-400">
                       Visit https://lattice.black/signup
@@ -102,12 +105,12 @@ export default function DocsPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                  <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                     2. Install Plugin
-                  </h3>
-                  <p className="mb-3 font-mono text-sm text-gray-500">
+                  </Heading>
+                  <Text size="sm" className="mb-3 text-gray-500">
                     Choose your framework and install the appropriate plugin:
-                  </p>
+                  </Text>
                   <div className="space-y-2">
                     <div className="border border-gray-800 bg-black p-4">
                       <code className="font-mono text-xs text-gray-400">
@@ -123,12 +126,12 @@ export default function DocsPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                  <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                     3. Configure
-                  </h3>
-                  <p className="mb-3 font-mono text-sm text-gray-500">
+                  </Heading>
+                  <Text size="sm" className="mb-3 text-gray-500">
                     Set your API key from the dashboard:
-                  </p>
+                  </Text>
                   <div className="border border-gray-800 bg-black p-4">
                     <pre className="font-mono text-xs overflow-x-auto">
                       <code>
@@ -139,26 +142,26 @@ export default function DocsPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                  <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                     4. Start Discovery
-                  </h3>
-                  <p className="font-mono text-sm text-gray-500">
+                  </Heading>
+                  <Text size="sm" className="text-gray-500">
                     Your services will begin appearing in the Lattice dashboard within minutes.
-                  </p>
+                  </Text>
                 </div>
               </div>
             </section>
 
             {/* Express Plugin */}
             <section id="express" className="mb-16">
-              <h2 className="mb-6 text-3xl font-bold uppercase tracking-tight text-white">
+              <Heading level={2} className="mb-6 text-3xl uppercase tracking-tight">
                 Express.js Plugin
-              </h2>
+              </Heading>
 
               <div className="mb-8">
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Installation
-                </h3>
+                </Heading>
                 <div className="border border-gray-800 bg-black p-4">
                   <code className="font-mono text-xs text-gray-400">
                     yarn add @lattice.black/plugin-express
@@ -167,9 +170,9 @@ export default function DocsPage() {
               </div>
 
               <div className="mb-8">
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Basic Usage
-                </h3>
+                </Heading>
                 <div className="border border-gray-800 bg-black p-4">
                   <pre className="font-mono text-xs overflow-x-auto">
                     <code>
@@ -208,10 +211,10 @@ export default function DocsPage() {
               </div>
 
               <div>
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Configuration Options
-                </h3>
-                <div className="border border-gray-800 bg-black/50 backdrop-blur-sm">
+                </Heading>
+                <Card>
                   <table className="w-full">
                     <thead className="border-b border-gray-800">
                       <tr>
@@ -306,20 +309,20 @@ export default function DocsPage() {
                       </tr>
                     </tbody>
                   </table>
-                </div>
+                </Card>
               </div>
             </section>
 
             {/* Next.js Plugin */}
             <section id="nextjs" className="mb-16">
-              <h2 className="mb-6 text-3xl font-bold uppercase tracking-tight text-white">
+              <Heading level={2} className="mb-6 text-3xl uppercase tracking-tight">
                 Next.js Plugin
-              </h2>
+              </Heading>
 
               <div className="mb-8">
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Installation
-                </h3>
+                </Heading>
                 <div className="border border-gray-800 bg-black p-4">
                   <code className="font-mono text-xs text-gray-400">
                     yarn add @lattice.black/plugin-nextjs
@@ -328,12 +331,12 @@ export default function DocsPage() {
               </div>
 
               <div className="mb-8">
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Basic Usage
-                </h3>
-                <p className="mb-3 font-mono text-sm text-gray-500">
+                </Heading>
+                <Text size="sm" className="mb-3 text-gray-500">
                   Create a discovery script and run it during your build or startup:
-                </p>
+                </Text>
                 <div className="border border-gray-800 bg-black p-4">
                   <pre className="font-mono text-xs overflow-x-auto">
                     <code>
@@ -353,9 +356,9 @@ export default function DocsPage() {
               </div>
 
               <div className="mb-8">
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Package.json Script
-                </h3>
+                </Heading>
                 <div className="border border-gray-800 bg-black p-4">
                   <pre className="font-mono text-xs overflow-x-auto">
                     <code>
@@ -371,10 +374,10 @@ export default function DocsPage() {
               </div>
 
               <div>
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Configuration Options
-                </h3>
-                <div className="border border-gray-800 bg-black/50 backdrop-blur-sm">
+                </Heading>
+                <Card>
                   <table className="w-full">
                     <thead className="border-b border-gray-800">
                       <tr>
@@ -436,23 +439,23 @@ export default function DocsPage() {
                       </tr>
                     </tbody>
                   </table>
-                </div>
+                </Card>
               </div>
             </section>
 
             {/* Configuration */}
             <section id="configuration" className="mb-16">
-              <h2 className="mb-6 text-3xl font-bold uppercase tracking-tight text-white">
+              <Heading level={2} className="mb-6 text-3xl uppercase tracking-tight">
                 Configuration
-              </h2>
+              </Heading>
 
               <div className="mb-8">
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Environment Variables
-                </h3>
-                <p className="mb-3 font-mono text-sm text-gray-500">
+                </Heading>
+                <Text size="sm" className="mb-3 text-gray-500">
                   Configure the plugin with your API key:
-                </p>
+                </Text>
                 <div className="border border-gray-800 bg-black p-4">
                   <pre className="font-mono text-xs overflow-x-auto">
                     <code>
@@ -466,12 +469,12 @@ export default function DocsPage() {
               </div>
 
               <div className="mb-8">
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Callbacks
-                </h3>
-                <p className="mb-3 font-mono text-sm text-gray-500">
+                </Heading>
+                <Text size="sm" className="mb-3 text-gray-500">
                   Hook into the discovery lifecycle with callbacks:
-                </p>
+                </Text>
                 <div className="border border-gray-800 bg-black p-4">
                   <pre className="font-mono text-xs overflow-x-auto">
                     <code>
@@ -493,12 +496,12 @@ export default function DocsPage() {
               </div>
 
               <div>
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Disabling in Production
-                </h3>
-                <p className="mb-3 font-mono text-sm text-gray-500">
+                </Heading>
+                <Text size="sm" className="mb-3 text-gray-500">
                   Control discovery behavior per environment:
-                </p>
+                </Text>
                 <div className="border border-gray-800 bg-black p-4">
                   <pre className="font-mono text-xs overflow-x-auto">
                     <code>
@@ -514,16 +517,16 @@ export default function DocsPage() {
 
             {/* API Reference */}
             <section id="api" className="mb-16">
-              <h2 className="mb-6 text-3xl font-bold uppercase tracking-tight text-white">
+              <Heading level={2} className="mb-6 text-3xl uppercase tracking-tight">
                 API Reference
-              </h2>
+              </Heading>
 
               <div className="mb-8">
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Collector API Endpoints
-                </h3>
+                </Heading>
                 <div className="space-y-4">
-                  <div className="border border-gray-800 bg-black/50 backdrop-blur-sm p-6">
+                  <Card className="p-6">
                     <div className="mb-2 flex items-center gap-3">
                       <span className="border border-gray-700 bg-black px-2 py-1 font-mono text-xs text-gray-400">
                         POST
@@ -532,12 +535,12 @@ export default function DocsPage() {
                         /api/v1/ingest/metadata
                       </code>
                     </div>
-                    <p className="font-mono text-xs text-gray-500">
+                    <Text size="xs" className="text-gray-500">
                       Submit service metadata, routes, and dependencies
-                    </p>
-                  </div>
+                    </Text>
+                  </Card>
 
-                  <div className="border border-gray-800 bg-black/50 backdrop-blur-sm p-6">
+                  <Card className="p-6">
                     <div className="mb-2 flex items-center gap-3">
                       <span className="border border-gray-700 bg-black px-2 py-1 font-mono text-xs text-gray-400">
                         GET
@@ -546,12 +549,12 @@ export default function DocsPage() {
                         /api/v1/services
                       </code>
                     </div>
-                    <p className="font-mono text-xs text-gray-500">
+                    <Text size="xs" className="text-gray-500">
                       List all discovered services
-                    </p>
-                  </div>
+                    </Text>
+                  </Card>
 
-                  <div className="border border-gray-800 bg-black/50 backdrop-blur-sm p-6">
+                  <Card className="p-6">
                     <div className="mb-2 flex items-center gap-3">
                       <span className="border border-gray-700 bg-black px-2 py-1 font-mono text-xs text-gray-400">
                         GET
@@ -560,20 +563,20 @@ export default function DocsPage() {
                         /api/v1/services/:id
                       </code>
                     </div>
-                    <p className="font-mono text-xs text-gray-500">
+                    <Text size="xs" className="text-gray-500">
                       Get service details including routes and dependencies
-                    </p>
-                  </div>
+                    </Text>
+                  </Card>
                 </div>
               </div>
 
               <div>
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
+                <Heading level={3} className="mb-3 text-lg uppercase tracking-wider">
                   Authentication
-                </h3>
-                <p className="mb-3 font-mono text-sm text-gray-500">
+                </Heading>
+                <Text size="sm" className="mb-3 text-gray-500">
                   All API requests require an API key in the Authorization header:
-                </p>
+                </Text>
                 <div className="border border-gray-800 bg-black p-4">
                   <pre className="font-mono text-xs overflow-x-auto">
                     <code>
@@ -585,20 +588,19 @@ export default function DocsPage() {
             </section>
 
             {/* Footer CTA */}
-            <div className="border border-gray-800 bg-black/50 backdrop-blur-sm p-12 text-center">
-              <h3 className="mb-3 text-2xl font-bold uppercase tracking-tight text-white">
+            <Card className="p-12 text-center">
+              <Heading level={3} className="mb-3 text-2xl uppercase tracking-tight">
                 Ready to Start?
-              </h3>
-              <p className="mb-6 font-mono text-sm text-gray-500">
+              </Heading>
+              <Text size="sm" className="mb-6 text-gray-500">
                 Get your API key and start discovering services in minutes
-              </p>
-              <Link
-                href="/signup"
-                className="inline-block border border-white bg-white px-8 py-4 font-mono text-base uppercase tracking-wider text-black hover:bg-gray-100 transition-colors"
-              >
-                Create Free Account
+              </Text>
+              <Link href="/signup">
+                <Button variant="primary" size="lg">
+                  Create Free Account
+                </Button>
               </Link>
-            </div>
+            </Card>
           </div>
         </main>
 
@@ -610,16 +612,16 @@ export default function DocsPage() {
                 <div className="relative h-6 w-6">
                   <div className="absolute inset-0 border border-gray-500" />
                 </div>
-                <span className="font-mono text-sm text-gray-600">
+                <Text size="sm" className="text-gray-600">
                   © 2025 Lattice. All rights reserved.
-                </span>
+                </Text>
               </div>
               <div className="flex gap-6">
-                <Link href="/docs" className="font-mono text-sm text-white">
-                  Documentation
+                <Link href="/docs" className="text-white">
+                  <Text size="sm">Documentation</Text>
                 </Link>
-                <Link href="/pricing" className="font-mono text-sm text-gray-600 hover:text-white transition-colors">
-                  Pricing
+                <Link href="/pricing" className="text-gray-600 hover:text-white transition-colors">
+                  <Text size="sm">Pricing</Text>
                 </Link>
               </div>
             </div>

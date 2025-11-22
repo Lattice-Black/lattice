@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateSupabase, AuthenticatedRequest } from '../middleware/auth';
+import { authenticateApiKey, AuthenticatedRequest } from '../middleware/auth';
 import { PaymentService } from '../services/payment-service';
 import { SubscriptionService } from '../services/subscription-service';
 import { getTierLimits } from '../lib/tiers';
@@ -19,7 +19,7 @@ export const createBillingRouter = (): Router => {
    */
   router.post(
     '/checkout',
-    authenticateSupabase,
+    authenticateApiKey,
     async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthenticatedRequest;
@@ -75,7 +75,7 @@ export const createBillingRouter = (): Router => {
    */
   router.post(
     '/portal',
-    authenticateSupabase,
+    authenticateApiKey,
     async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthenticatedRequest;
@@ -121,7 +121,7 @@ export const createBillingRouter = (): Router => {
    */
   router.get(
     '/subscription',
-    authenticateSupabase,
+    authenticateApiKey,
     async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthenticatedRequest;
@@ -182,7 +182,7 @@ export const createBillingRouter = (): Router => {
    */
   router.post(
     '/cancel',
-    authenticateSupabase,
+    authenticateApiKey,
     async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthenticatedRequest;

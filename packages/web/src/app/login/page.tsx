@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { signIn } from 'next-auth/react';
+import { Button, Card, CardContent, Heading, Text, Input } from '@duro/core';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,35 +12,30 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('handleSubmit called');
     e.preventDefault();
-    console.log('preventDefault called, email:', email, 'password length:', password.length);
     setError(null);
     setLoading(true);
 
     try {
-      console.log('Calling supabase.auth.signInWithPassword...');
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const result = await signIn('credentials', {
         email,
         password,
+        redirect: false,
       });
 
-      console.log('Supabase response:', { data, error });
+      if (result?.error) {
+        setError('Invalid email or password');
+        return;
+      }
 
-      if (error) throw error;
-
-      if (data.user) {
-        console.log('Login successful, redirecting to /dashboard');
-        // Refresh the page to trigger middleware with new auth cookies
+      if (result?.ok) {
         router.refresh();
         router.push('/dashboard');
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to sign in');
+    } catch {
+      setError('Failed to sign in');
     } finally {
       setLoading(false);
     }
@@ -65,72 +59,79 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <h1 className="mb-2 text-3xl font-bold uppercase tracking-tight text-white">
+          <Heading level={1} className="mb-2 text-3xl uppercase tracking-tight">
             Lattice
-          </h1>
-          <p className="font-mono text-sm uppercase tracking-wider text-gray-500">
+          </Heading>
+          <Text size="sm" className="uppercase tracking-wider text-gray-500">
             Service Discovery Platform
-          </p>
+          </Text>
         </div>
 
         {/* Login Form */}
-        <div className="border border-gray-800 bg-black/50 backdrop-blur-sm">
+        <Card>
           <div className="border-b border-gray-800 p-6">
-            <h2 className="font-mono text-sm uppercase tracking-wider text-gray-500">
+            <Text size="sm" className="uppercase tracking-wider text-gray-500">
               Sign In
-            </h2>
+            </Text>
           </div>
 
-          <form onSubmit={(e) => void handleSubmit(e)} className="p-6 space-y-6">
-            {error && (
-              <div className="border border-red-900 bg-red-950/20 p-4">
-                <p className="font-mono text-sm text-red-500">{error}</p>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
+              {error && (
+                <div className="border border-red-900 bg-red-950/20 p-4">
+                  <Text size="sm" className="text-red-500">{error}</Text>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Text size="sm" className="uppercase tracking-wider text-gray-500">
+                  Email Address
+                </Text>
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                />
               </div>
-            )}
 
-            <Input
-              label="Email Address"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-            />
+              <div className="space-y-2">
+                <Text size="sm" className="uppercase tracking-wider text-gray-500">
+                  Password
+                </Text>
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                />
+              </div>
 
-            <Input
-              label="Password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-            />
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              isLoading={loading}
-              className="w-full"
-            >
-              {loading ? 'Signing In...' : 'Sign In'}
-            </Button>
-
-            <div className="border-t border-gray-800 pt-6 text-center">
-              <span className="font-mono text-sm text-gray-500">
-                Don&apos;t have an account?{' '}
-              </span>
-              <Link
-                href="/signup"
-                className="font-mono text-sm text-white hover:text-gray-300 transition-colors"
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                disabled={loading}
+                className="w-full"
               >
-                Sign up
-              </Link>
-            </div>
-          </form>
-        </div>
+                {loading ? 'Signing In...' : 'Sign In'}
+              </Button>
+
+              <div className="border-t border-gray-800 pt-6 text-center">
+                <Text size="sm" className="text-gray-500">
+                  Don&apos;t have an account?{' '}
+                  <Link href="/signup" className="text-white hover:text-gray-300 transition-colors">
+                    Sign up
+                  </Link>
+                </Text>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

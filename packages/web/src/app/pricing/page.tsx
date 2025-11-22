@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
+import { useSession } from 'next-auth/react';
 import { DotGrid } from '@/components/DotGrid';
 import { PublicNav } from '@/components/PublicNav';
-import { getSessionToken } from '@/lib/supabase/utils';
+import { Button, Card, CardContent, Heading, Text } from '@duro/core';
 
 type SubscriptionTier = 'basic' | 'pro' | 'enterprise';
 
@@ -60,6 +60,7 @@ const PRICING_TIERS: PricingTier[] = [
 ];
 
 export default function PricingPage() {
+  const { data: session, status } = useSession();
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -69,10 +70,7 @@ export default function PricingPage() {
     setLoadingTier(tier);
 
     try {
-      // Get auth token
-      const token = await getSessionToken();
-
-      if (!token) {
+      if (status !== 'authenticated' || !session) {
         // Redirect to login if not authenticated
         router.push(`/login?redirect=/pricing`);
         return;
@@ -84,7 +82,7 @@ export default function PricingPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'X-User-Id': session.user?.id || '',
         },
         body: JSON.stringify({
           tier,
@@ -119,54 +117,54 @@ export default function PricingPage() {
         <main className="container mx-auto px-6 py-16">
           {/* Page Header */}
           <div className="mb-16 text-center">
-            <h1 className="mb-4 text-5xl font-bold uppercase tracking-tight text-white">
+            <Heading level={1} className="mb-4 text-5xl uppercase tracking-tight">
               Pricing
-            </h1>
-            <p className="mx-auto max-w-2xl font-mono text-sm text-gray-500">
+            </Heading>
+            <Text size="sm" className="mx-auto max-w-2xl text-gray-500">
               Choose the perfect plan for your team. All plans include a 14-day free trial.
-            </p>
+            </Text>
           </div>
 
           {/* Error Message */}
           {error && (
             <div className="mx-auto mb-8 max-w-4xl border border-red-900 bg-red-950/20 p-4">
-              <p className="font-mono text-sm text-red-500">{error}</p>
+              <Text size="sm" className="text-red-500">{error}</Text>
             </div>
           )}
 
           {/* Pricing Cards */}
           <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
             {PRICING_TIERS.map((tier) => (
-              <div
+              <Card
                 key={tier.id}
-                className="flex flex-col border border-gray-800 bg-black/50 backdrop-blur-sm transition-colors hover:border-gray-700"
+                className="flex flex-col transition-colors hover:border-gray-700"
               >
                 {/* Card Header */}
                 <div className="border-b border-gray-800 p-8">
-                  <h3 className="mb-2 font-mono text-sm uppercase tracking-wider text-gray-500">
+                  <Text size="sm" className="mb-2 uppercase tracking-wider text-gray-500">
                     {tier.name}
-                  </h3>
+                  </Text>
                   <div className="mb-4 flex items-baseline gap-2">
                     <span className="text-5xl font-bold text-white">
                       ${tier.price}
                     </span>
-                    <span className="font-mono text-sm text-gray-500">/year</span>
+                    <Text size="sm" className="text-gray-500">/year</Text>
                   </div>
-                  <p className="font-mono text-xs text-gray-500">
+                  <Text size="xs" className="text-gray-500">
                     {tier.description}
-                  </p>
+                  </Text>
                 </div>
 
                 {/* Features List */}
-                <div className="flex flex-1 flex-col p-8">
+                <CardContent className="flex flex-1 flex-col">
                   <ul className="mb-8 space-y-3">
                     {tier.features.map((feature, index) => (
                       <li
                         key={index}
-                        className="flex items-start gap-3 font-mono text-sm text-gray-400"
+                        className="flex items-start gap-3 text-gray-400"
                       >
                         <span className="mt-1 text-white">→</span>
-                        <span>{feature}</span>
+                        <Text size="sm">{feature}</Text>
                       </li>
                     ))}
                   </ul>
@@ -176,27 +174,26 @@ export default function PricingPage() {
                     size="lg"
                     className="mt-auto w-full"
                     onClick={() => void handleSubscribe(tier.id)}
-                    isLoading={loadingTier === tier.id}
                     disabled={loadingTier !== null}
                   >
                     {loadingTier === tier.id ? 'Processing...' : 'Subscribe'}
                   </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
 
           {/* Footer Note */}
           <div className="mt-16 text-center">
-            <p className="font-mono text-xs text-gray-600">
+            <Text size="xs" className="text-gray-600">
               All plans include a 14-day free trial. No charges until trial ends.
-            </p>
-            <p className="mt-2 font-mono text-xs text-gray-600">
+            </Text>
+            <Text size="xs" className="mt-2 text-gray-600">
               Need a custom plan?{' '}
               <a href="mailto:sales@lattice.dev" className="text-white hover:text-gray-300">
                 Contact us
               </a>
-            </p>
+            </Text>
           </div>
         </main>
       </div>

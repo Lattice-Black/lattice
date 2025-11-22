@@ -1,6 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { DotGrid } from '@/components/DotGrid';
 import { PublicNav } from '@/components/PublicNav';
+import { Button, Card, CardContent, Heading, Text, Grid } from '@duro/core';
 
 export default function HomePage() {
   return (
@@ -26,29 +29,27 @@ export default function HomePage() {
               </div>
             </div>
 
-            <h1 className="mb-6 text-6xl font-bold uppercase tracking-tight text-white">
+            <Heading level={1} className="mb-6 text-6xl uppercase tracking-tight">
               Service Discovery
               <br />
               Made Simple
-            </h1>
-            <p className="mb-12 text-xl text-gray-500 font-mono">
+            </Heading>
+            <Text size="xl" className="mb-12 text-gray-500">
               Automatically discover, map, and monitor your microservices architecture.
               <br />
               Real-time visibility into your entire service ecosystem.
-            </p>
+            </Text>
 
             <div className="flex gap-4 justify-center">
-              <Link
-                href="/signup"
-                className="border border-white bg-white px-8 py-4 font-mono text-base uppercase tracking-wider text-black hover:bg-gray-100 transition-colors"
-              >
-                Start Free Trial
+              <Link href="/signup">
+                <Button variant="primary" size="lg">
+                  Start Free Trial
+                </Button>
               </Link>
-              <Link
-                href="/docs"
-                className="border border-gray-800 bg-black px-8 py-4 font-mono text-base uppercase tracking-wider text-white hover:border-gray-700 transition-colors"
-              >
-                View Documentation
+              <Link href="/docs">
+                <Button variant="outline" size="lg">
+                  View Documentation
+                </Button>
               </Link>
             </div>
           </div>
@@ -57,56 +58,63 @@ export default function HomePage() {
         {/* Features Section */}
         <section className="border-t border-gray-800 bg-black/50 backdrop-blur-sm py-24">
           <div className="container mx-auto px-6">
-            <div className="grid gap-12 md:grid-cols-3">
-              <div className="border border-gray-800 p-8">
-                <div className="mb-4 h-12 w-12 border border-gray-800" />
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
-                  Auto-Discovery
-                </h3>
-                <p className="font-mono text-sm text-gray-500">
-                  Plugins automatically detect and register your services, routes, and dependencies. No manual configuration required.
-                </p>
-              </div>
+            <Grid className="gap-12 md:grid-cols-3">
+              <Card>
+                <CardContent>
+                  <div className="mb-4 h-12 w-12 border border-gray-800" />
+                  <Heading level={3} className="mb-3 uppercase tracking-wider">
+                    Auto-Discovery
+                  </Heading>
+                  <Text size="sm" className="text-gray-500">
+                    Plugins automatically detect and register your services, routes, and dependencies. No manual configuration required.
+                  </Text>
+                </CardContent>
+              </Card>
 
-              <div className="border border-gray-800 p-8">
-                <div className="mb-4 h-12 w-12 border border-gray-800" />
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
-                  Real-Time Monitoring
-                </h3>
-                <p className="font-mono text-sm text-gray-500">
-                  Track service health, dependencies, and API routes in real-time. Visualize your architecture with interactive network graphs.
-                </p>
-              </div>
+              <Card>
+                <CardContent>
+                  <div className="mb-4 h-12 w-12 border border-gray-800" />
+                  <Heading level={3} className="mb-3 uppercase tracking-wider">
+                    Real-Time Monitoring
+                  </Heading>
+                  <Text size="sm" className="text-gray-500">
+                    Track service health, dependencies, and API routes in real-time. Visualize your architecture with interactive network graphs.
+                  </Text>
+                </CardContent>
+              </Card>
 
-              <div className="border border-gray-800 p-8">
-                <div className="mb-4 h-12 w-12 border border-gray-800" />
-                <h3 className="mb-3 font-mono text-lg uppercase tracking-wider text-white">
-                  Framework Support
-                </h3>
-                <p className="font-mono text-sm text-gray-500">
-                  Works with Express, Next.js, and more. Drop-in plugins integrate with your existing stack in minutes.
-                </p>
-              </div>
-            </div>
+              <Card>
+                <CardContent>
+                  <div className="mb-4 h-12 w-12 border border-gray-800" />
+                  <Heading level={3} className="mb-3 uppercase tracking-wider">
+                    Framework Support
+                  </Heading>
+                  <Text size="sm" className="text-gray-500">
+                    Works with Express, Next.js, and more. Drop-in plugins integrate with your existing stack in minutes.
+                  </Text>
+                </CardContent>
+              </Card>
+            </Grid>
           </div>
         </section>
 
         {/* CTA Section */}
         <section className="container mx-auto px-6 py-24">
-          <div className="border border-gray-800 bg-black/50 backdrop-blur-sm p-16 text-center">
-            <h2 className="mb-4 text-4xl font-bold uppercase tracking-tight text-white">
-              Ready to Get Started?
-            </h2>
-            <p className="mb-8 font-mono text-lg text-gray-500">
-              Start discovering your services in under 5 minutes.
-            </p>
-            <Link
-              href="/signup"
-              className="inline-block border border-white bg-white px-8 py-4 font-mono text-base uppercase tracking-wider text-black hover:bg-gray-100 transition-colors"
-            >
-              Create Free Account
-            </Link>
-          </div>
+          <Card className="p-16 text-center">
+            <CardContent>
+              <Heading level={2} className="mb-4 text-4xl uppercase tracking-tight">
+                Ready to Get Started?
+              </Heading>
+              <Text size="lg" className="mb-8 text-gray-500">
+                Start discovering your services in under 5 minutes.
+              </Text>
+              <Link href="/signup">
+                <Button variant="primary" size="lg">
+                  Create Free Account
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </section>
 
         {/* Footer */}
@@ -117,16 +125,16 @@ export default function HomePage() {
                 <div className="relative h-6 w-6">
                   <div className="absolute inset-0 border border-gray-500" />
                 </div>
-                <span className="font-mono text-sm text-gray-600">
+                <Text size="sm" className="text-gray-600">
                   © 2025 Lattice. All rights reserved.
-                </span>
+                </Text>
               </div>
               <div className="flex gap-6">
-                <Link href="/docs" className="font-mono text-sm text-gray-600 hover:text-white transition-colors">
-                  Documentation
+                <Link href="/docs" className="text-gray-600 hover:text-white transition-colors">
+                  <Text size="sm">Documentation</Text>
                 </Link>
-                <Link href="/pricing" className="font-mono text-sm text-gray-600 hover:text-white transition-colors">
-                  Pricing
+                <Link href="/pricing" className="text-gray-600 hover:text-white transition-colors">
+                  <Text size="sm">Pricing</Text>
                 </Link>
               </div>
             </div>

@@ -1,14 +1,19 @@
-import { Suspense } from 'react'
+'use client';
+
+import { useState, useEffect } from 'react'
 import { fetchMetricsStats, fetchMetricsConnections } from '@/lib/api'
 import type { ServiceMetricsStat, ServiceConnection } from '@/types'
 import Link from 'next/link'
+import {
+  Button,
+  Card,
+  CardContent,
+  Heading,
+  Text,
+  Badge,
+} from '@duro/core'
 
-
-// Force dynamic rendering - authentication required
-export const dynamic = 'force-dynamic'
-async function SystemHealthSummary() {
-  const stats: ServiceMetricsStat[] = await fetchMetricsStats()
-
+function SystemHealthSummary({ stats }: { stats: ServiceMetricsStat[] }) {
   if (!stats || stats.length === 0) {
     return null
   }
@@ -22,79 +27,88 @@ async function SystemHealthSummary() {
   const healthyServices = stats.filter(s => Number(s.error_rate) < 1 && Number(s.avg_response_time_ms) < 500).length
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <div className="border border-gray-800 p-6 bg-black/50 backdrop-blur-sm">
-        <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-2">
-          Total Services
-        </div>
-        <div className="text-4xl font-bold text-white">
-          {stats.length}
-        </div>
-        <div className="text-xs text-gray-500 font-mono mt-2">
-          {healthyServices} healthy
-        </div>
-      </div>
+    <div className="grid grid-cols-4 gap-6 mb-8">
+      <Card>
+        <CardContent className="p-6">
+          <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-2">
+            Total Services
+          </Text>
+          <Text className="text-4xl font-bold text-white font-mono">
+            {stats.length}
+          </Text>
+          <Text size="xs" className="text-gray-500 font-mono mt-2">
+            {healthyServices} healthy
+          </Text>
+        </CardContent>
+      </Card>
 
-      <div className="border border-gray-800 p-6 bg-black/50 backdrop-blur-sm">
-        <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-2">
-          Total Requests
-        </div>
-        <div className="text-4xl font-bold text-white">
-          {totalRequests.toLocaleString()}
-        </div>
-        <div className="text-xs text-gray-500 font-mono mt-2">
-          last 1 hour
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-2">
+            Total Requests
+          </Text>
+          <Text className="text-4xl font-bold text-white font-mono">
+            {totalRequests.toLocaleString()}
+          </Text>
+          <Text size="xs" className="text-gray-500 font-mono mt-2">
+            last 1 hour
+          </Text>
+        </CardContent>
+      </Card>
 
-      <div className="border border-gray-800 p-6 bg-black/50 backdrop-blur-sm">
-        <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-2">
-          Avg Response Time
-        </div>
-        <div className={`text-4xl font-bold ${avgResponseTime > 500 ? 'text-yellow-400' : 'text-white'}`}>
-          {avgResponseTime}
-          <span className="text-xl text-gray-500 ml-1">ms</span>
-        </div>
-        <div className="text-xs text-gray-500 font-mono mt-2">
-          across all services
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-2">
+            Avg Response Time
+          </Text>
+          <Text className={`text-4xl font-bold font-mono ${avgResponseTime > 500 ? 'text-yellow-500' : 'text-white'}`}>
+            {avgResponseTime}
+            <span className="text-lg text-gray-500">ms</span>
+          </Text>
+          <Text size="xs" className="text-gray-500 font-mono mt-2">
+            across all services
+          </Text>
+        </CardContent>
+      </Card>
 
-      <div className="border border-gray-800 p-6 bg-black/50 backdrop-blur-sm">
-        <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-2">
-          Avg Error Rate
-        </div>
-        <div className={`text-4xl font-bold ${avgErrorRate > 5 ? 'text-red-400' : avgErrorRate > 1 ? 'text-yellow-400' : 'text-green-400'}`}>
-          {avgErrorRate.toFixed(1)}%
-        </div>
-        <div className="text-xs text-gray-500 font-mono mt-2">
-          system-wide average
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-2">
+            Avg Error Rate
+          </Text>
+          <Text className={`text-4xl font-bold font-mono ${avgErrorRate > 5 ? 'text-red-500' : avgErrorRate > 1 ? 'text-yellow-500' : 'text-green-500'}`}>
+            {avgErrorRate.toFixed(1)}%
+          </Text>
+          <Text size="xs" className="text-gray-500 font-mono mt-2">
+            system-wide average
+          </Text>
+        </CardContent>
+      </Card>
     </div>
   )
 }
 
-async function MetricsStatsGrid() {
-  const stats: ServiceMetricsStat[] = await fetchMetricsStats()
-
+function MetricsStatsGrid({ stats }: { stats: ServiceMetricsStat[] }) {
   if (!stats || stats.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 border border-gray-800 bg-black/50">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="font-mono text-sm text-gray-500 mb-2">
-            No metrics data available
+          <div className="w-24 h-24 border-2 border-gray-800 mb-6 mx-auto relative">
+            <div className="absolute inset-4 border border-gray-800" />
           </div>
-          <p className="text-xs text-gray-600">
+          <Heading level={3} className="mb-2">
+            No Metrics Data
+          </Heading>
+          <Text size="sm" className="text-gray-500 font-mono">
             Make some requests to your services to see metrics
-          </p>
+          </Text>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-3 gap-6">
       {stats.map((stat: ServiceMetricsStat) => {
         const errorRate = Number(stat.error_rate || 0)
         const avgTime = Number(stat.avg_response_time_ms || 0)
@@ -103,74 +117,76 @@ async function MetricsStatsGrid() {
         const isHealthy = errorRate < 1 && avgTime < 500
         const isDegraded = errorRate >= 1 && errorRate < 5
 
-        const healthColor = isHealthy ? 'text-green-400' : isDegraded ? 'text-yellow-400' : 'text-red-400'
-        const healthBorder = isHealthy ? 'border-green-900' : isDegraded ? 'border-yellow-900' : 'border-red-900'
-        const healthStatus = isHealthy ? 'Healthy' : isDegraded ? 'Degraded' : 'Critical'
+        const healthVariant = isHealthy ? 'success' : isDegraded ? 'warning' : 'error'
+        const healthStatus = isHealthy ? 'HEALTHY' : isDegraded ? 'DEGRADED' : 'CRITICAL'
 
         return (
           <Link
             key={stat.id}
             href={`/dashboard/services/${stat.id}`}
-            className="border border-gray-800 p-6 bg-black/50 backdrop-blur-sm hover:border-gray-700 transition-all hover:scale-[1.02] cursor-pointer group"
           >
-            {/* Service Name & Health */}
-            <div className="mb-6 flex items-start justify-between">
-              <div className="flex-1">
-                <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Service
+            <Card className="hover:border-gray-700 transition-all cursor-pointer group">
+              <CardContent className="p-6">
+                {/* Service Name & Health */}
+                <div className="mb-6 flex items-start justify-between">
+                  <div className="flex-1">
+                    <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-1">
+                      Service
+                    </Text>
+                    <Text className="text-xl font-bold text-white truncate group-hover:text-gray-200">
+                      {stat.name}
+                    </Text>
+                  </div>
+                  <Badge variant={healthVariant}>
+                    {healthStatus}
+                  </Badge>
                 </div>
-                <div className="text-xl font-bold text-white truncate group-hover:text-gray-200">
-                  {stat.name}
-                </div>
-              </div>
-              <div className={`px-2 py-1 border ${healthBorder} text-xs font-mono uppercase tracking-wider ${healthColor}`}>
-                {healthStatus}
-              </div>
-            </div>
 
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Total Requests */}
-              <div>
-                <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Requests
-                </div>
-                <div className="text-2xl font-bold text-white">
-                  {(stat.total_requests || 0).toLocaleString()}
-                </div>
-              </div>
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Total Requests */}
+                  <div>
+                    <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-1">
+                      Requests
+                    </Text>
+                    <Text className="text-2xl font-bold text-white font-mono">
+                      {(stat.total_requests || 0).toLocaleString()}
+                    </Text>
+                  </div>
 
-              {/* Avg Response Time */}
-              <div>
-                <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Avg Time
-                </div>
-                <div className={`text-2xl font-bold ${avgTime > 500 ? 'text-yellow-400' : avgTime > 1000 ? 'text-red-400' : 'text-white'}`}>
-                  {avgTime.toLocaleString()}
-                  <span className="text-sm text-gray-500 ml-1">ms</span>
-                </div>
-              </div>
+                  {/* Avg Response Time */}
+                  <div>
+                    <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-1">
+                      Avg Time
+                    </Text>
+                    <Text className={`text-2xl font-bold font-mono ${avgTime > 500 ? 'text-yellow-500' : avgTime > 1000 ? 'text-red-500' : 'text-white'}`}>
+                      {avgTime.toLocaleString()}
+                      <span className="text-sm text-gray-500 ml-1">ms</span>
+                    </Text>
+                  </div>
 
-              {/* Error Rate */}
-              <div>
-                <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Error Rate
-                </div>
-                <div className={`text-2xl font-bold ${errorRate > 5 ? 'text-red-400' : errorRate > 1 ? 'text-yellow-400' : 'text-green-400'}`}>
-                  {errorRate.toFixed(1)}%
-                </div>
-              </div>
+                  {/* Error Rate */}
+                  <div>
+                    <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-1">
+                      Error Rate
+                    </Text>
+                    <Text className={`text-2xl font-bold font-mono ${errorRate > 5 ? 'text-red-500' : errorRate > 1 ? 'text-yellow-500' : 'text-green-500'}`}>
+                      {errorRate.toFixed(1)}%
+                    </Text>
+                  </div>
 
-              {/* Last Request */}
-              <div>
-                <div className="font-mono text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Last Request
+                  {/* Last Request */}
+                  <div>
+                    <Text size="sm" className="text-gray-500 uppercase tracking-wider mb-1">
+                      Last Request
+                    </Text>
+                    <Text size="xs" className="text-gray-400 font-mono">
+                      {stat.last_request_time ? new Date(stat.last_request_time).toLocaleTimeString() : 'N/A'}
+                    </Text>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400 font-mono">
-                  {stat.last_request_time ? new Date(stat.last_request_time).toLocaleTimeString() : 'N/A'}
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </Link>
         )
       })}
@@ -178,148 +194,181 @@ async function MetricsStatsGrid() {
   )
 }
 
-async function ConnectionsTable() {
-  const connections: ServiceConnection[] = await fetchMetricsConnections()
-
+function ConnectionsTable({ connections }: { connections: ServiceConnection[] }) {
   if (!connections || connections.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 border border-gray-800 bg-black/50">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="font-mono text-sm text-gray-500 mb-2">
-            No inter-service connections detected
+          <div className="w-24 h-24 border-2 border-gray-800 mb-6 mx-auto relative">
+            <div className="absolute inset-4 border border-gray-800" />
           </div>
-          <p className="text-xs text-gray-600">
+          <Heading level={3} className="mb-2">
+            No Connections Detected
+          </Heading>
+          <Text size="sm" className="text-gray-500 font-mono">
             Services will appear here when they communicate with each other
-          </p>
+          </Text>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="border border-gray-800 bg-black/50 backdrop-blur-sm overflow-hidden">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-gray-800">
-            <th className="text-left p-4 font-mono text-xs text-gray-500 uppercase tracking-wider">
-              Source Service
-            </th>
-            <th className="text-left p-4 font-mono text-xs text-gray-500 uppercase tracking-wider">
-              Target Service
-            </th>
-            <th className="text-right p-4 font-mono text-xs text-gray-500 uppercase tracking-wider">
-              Call Count
-            </th>
-            <th className="text-right p-4 font-mono text-xs text-gray-500 uppercase tracking-wider">
-              Avg Response Time
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {connections.map((conn: ServiceConnection, idx: number) => (
-            <tr key={idx} className="border-b border-gray-800 last:border-b-0 hover:bg-gray-900/50 transition-colors">
-              <td className="p-4 text-white font-mono text-sm">
-                {conn.source_service}
-              </td>
-              <td className="p-4 text-white font-mono text-sm">
-                {conn.target_service}
-              </td>
-              <td className="p-4 text-right text-white font-bold">
-                {conn.call_count}
-              </td>
-              <td className="p-4 text-right text-white">
-                {conn.avg_response_time}
-                <span className="text-sm text-gray-500 ml-1">ms</span>
-              </td>
+    <Card>
+      <CardContent className="p-0 overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-800">
+              <th className="text-left p-4 font-mono text-xs text-gray-500 uppercase tracking-wider">
+                Source Service
+              </th>
+              <th className="text-left p-4 font-mono text-xs text-gray-500 uppercase tracking-wider">
+                Target Service
+              </th>
+              <th className="text-right p-4 font-mono text-xs text-gray-500 uppercase tracking-wider">
+                Call Count
+              </th>
+              <th className="text-right p-4 font-mono text-xs text-gray-500 uppercase tracking-wider">
+                Avg Response Time
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {connections.map((conn: ServiceConnection, idx: number) => (
+              <tr key={idx} className="border-b border-gray-800 last:border-b-0 hover:bg-gray-900/50 transition-colors">
+                <td className="p-4 text-white font-mono text-sm">
+                  {conn.source_service}
+                </td>
+                <td className="p-4 text-white font-mono text-sm">
+                  {conn.target_service}
+                </td>
+                <td className="p-4 text-right text-white font-bold">
+                  {conn.call_count}
+                </td>
+                <td className="p-4 text-right text-white">
+                  {conn.avg_response_time}
+                  <span className="text-sm text-gray-500 ml-1">ms</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
+  )
+}
+
+function LoadingPlaceholder() {
+  return (
+    <div className="grid grid-cols-4 gap-6 mb-8">
+      {[1, 2, 3, 4].map(i => (
+        <Card key={i}>
+          <CardContent className="p-6">
+            <div className="h-4 bg-gray-800 w-24 mb-2 animate-pulse" />
+            <div className="h-10 bg-gray-800 w-16 animate-pulse" />
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }
 
 export default function MetricsPage() {
+  const [stats, setStats] = useState<ServiceMetricsStat[]>([])
+  const [connections, setConnections] = useState<ServiceConnection[]>([])
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const [isLoadingConnections, setIsLoadingConnections] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [statsData, connectionsData] = await Promise.all([
+          fetchMetricsStats(),
+          fetchMetricsConnections()
+        ])
+        setStats(statsData || [])
+        setConnections(connectionsData || [])
+      } catch (error) {
+        console.error('Failed to fetch metrics:', error)
+      } finally {
+        setIsLoadingStats(false)
+        setIsLoadingConnections(false)
+      }
+    }
+    void loadData()
+  }, [])
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="border-b border-gray-800 pb-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+            <Heading level={1} className="text-4xl mb-2 tracking-tight">
               Runtime Metrics
-            </h1>
-            <p className="text-gray-500 font-mono text-sm">
+            </Heading>
+            <Text size="sm" className="text-gray-500">
               Real-time performance statistics from your services
-            </p>
+            </Text>
           </div>
           <div className="flex gap-2">
-            <Link
-              href="/dashboard"
-              className="px-4 py-2 border border-gray-800 bg-black/50 text-sm text-gray-400 hover:text-white hover:border-gray-700 transition-colors font-mono uppercase tracking-wider"
-            >
-              Services
+            <Link href="/dashboard">
+              <Button variant="outline" size="sm">
+                Services
+              </Button>
             </Link>
-            <Link
-              href="/dashboard/graph"
-              className="px-4 py-2 border border-gray-800 bg-black/50 text-sm text-gray-400 hover:text-white hover:border-gray-700 transition-colors font-mono uppercase tracking-wider"
-            >
-              Network Graph
+            <Link href="/dashboard/graph">
+              <Button variant="outline" size="sm">
+                Network Graph
+              </Button>
             </Link>
           </div>
         </div>
       </div>
 
       {/* System Health Summary */}
-      <Suspense fallback={
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="border border-gray-800 p-6 bg-black/50 animate-pulse">
-              <div className="h-4 bg-gray-800 rounded w-24 mb-2"></div>
-              <div className="h-10 bg-gray-800 rounded w-16"></div>
-            </div>
-          ))}
-        </div>
-      }>
-        <SystemHealthSummary />
-      </Suspense>
+      {isLoadingStats ? <LoadingPlaceholder /> : <SystemHealthSummary stats={stats} />}
 
       {/* Service Statistics */}
-      <div>
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold text-white mb-1">
+      <div className="space-y-4">
+        <div>
+          <Heading level={2} className="text-2xl mb-1">
             Service Statistics
-          </h2>
-          <p className="text-sm text-gray-500 font-mono">
+          </Heading>
+          <Text size="sm" className="text-gray-500">
             Last 1 hour of request data
-          </p>
+          </Text>
         </div>
-        <Suspense fallback={
-          <div className="border border-gray-800 p-12 bg-black/50 text-center">
-            <div className="animate-pulse text-gray-500 font-mono">Loading metrics...</div>
+        {isLoadingStats ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-16 h-16 border-2 border-gray-800 relative">
+              <div className="absolute inset-2 border border-gray-700 animate-pulse" />
+            </div>
           </div>
-        }>
-          <MetricsStatsGrid />
-        </Suspense>
+        ) : (
+          <MetricsStatsGrid stats={stats} />
+        )}
       </div>
 
       {/* Inter-Service Connections */}
-      <div>
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold text-white mb-1">
+      <div className="space-y-4">
+        <div>
+          <Heading level={2} className="text-2xl mb-1">
             Inter-Service Communication
-          </h2>
-          <p className="text-sm text-gray-500 font-mono">
+          </Heading>
+          <Text size="sm" className="text-gray-500">
             Service-to-service call patterns
-          </p>
+          </Text>
         </div>
-        <Suspense fallback={
-          <div className="border border-gray-800 p-12 bg-black/50 text-center">
-            <div className="animate-pulse text-gray-500 font-mono">Loading connections...</div>
+        {isLoadingConnections ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-16 h-16 border-2 border-gray-800 relative">
+              <div className="absolute inset-2 border border-gray-700 animate-pulse" />
+            </div>
           </div>
-        }>
-          <ConnectionsTable />
-        </Suspense>
+        ) : (
+          <ConnectionsTable connections={connections} />
+        )}
       </div>
     </div>
   )

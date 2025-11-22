@@ -16,6 +16,9 @@ export * from './breadcrumb';
 export * from './session';
 export * from './alert';
 
+// SDK Configuration Types
+export * from './sdk-config';
+
 /**
  * Service metadata submission payload
  * Used by plugins to submit discovered metadata to the collector API

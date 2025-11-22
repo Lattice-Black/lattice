@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/lib/auth-context';
+import { useSession, signOut } from 'next-auth/react';
+import { Button, Text, Heading } from '@duro/core';
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -14,6 +15,10 @@ export function Header() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleSignOut = () => {
+    void signOut({ callbackUrl: '/login' });
   };
 
   return (
@@ -26,60 +31,36 @@ export function Header() {
                 <div className="w-8 h-8 border-2 border-white relative">
                   <div className="absolute inset-1 border border-gray-400" />
                 </div>
-                <h1 className="text-2xl font-bold tracking-tighter text-white group-hover:text-gray-300 transition-colors">
+                <Heading level={1} className="text-2xl tracking-tighter group-hover:text-gray-300 transition-colors">
                   LATTICE
-                </h1>
+                </Heading>
               </Link>
 
               {/* Desktop Navigation */}
-              {user && (
+              {session && (
                 <nav className="hidden md:flex gap-6">
-                  <Link
-                    href="/dashboard"
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
+                  <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                     Services
                   </Link>
-                  <Link
-                    href="/dashboard/metrics"
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
+                  <Link href="/dashboard/metrics" className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                     Metrics
                   </Link>
-                  <Link
-                    href="/dashboard/errors"
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
+                  <Link href="/dashboard/errors" className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                     Errors
                   </Link>
-                  <Link
-                    href="/dashboard/performance"
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
+                  <Link href="/dashboard/performance" className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                     Performance
                   </Link>
-                  <Link
-                    href="/dashboard/health"
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
+                  <Link href="/dashboard/health" className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                     Health
                   </Link>
-                  <Link
-                    href="/dashboard/alerts"
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
+                  <Link href="/dashboard/alerts" className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                     Alerts
                   </Link>
-                  <Link
-                    href="/dashboard/graph"
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
+                  <Link href="/dashboard/graph" className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                     Network Graph
                   </Link>
-                  <Link
-                    href="/dashboard/settings"
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
+                  <Link href="/dashboard/settings" className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                     Settings
                   </Link>
                 </nav>
@@ -88,27 +69,28 @@ export function Header() {
 
             {/* Desktop Right Section */}
             <div className="hidden md:flex items-center gap-4">
-              {user ? (
+              {session ? (
                 <>
-                  <span className="font-mono text-xs text-gray-400">
-                    {user.email}
-                  </span>
-                  <button
-                    onClick={() => void signOut()}
-                    className="text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+                  <Text size="xs" className="text-gray-400">
+                    {session.user?.email}
+                  </Text>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSignOut}
                   >
                     Sign Out
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <div className="font-mono text-xs text-gray-500 uppercase tracking-wider">
+                <Text size="xs" className="text-gray-500 uppercase tracking-wider">
                   Service Discovery Platform
-                </div>
+                </Text>
               )}
             </div>
 
             {/* Mobile Menu Button */}
-            {user && (
+            {session && (
               <button
                 onClick={toggleMobileMenu}
                 className="md:hidden flex flex-col gap-1.5 p-2"
@@ -124,7 +106,7 @@ export function Header() {
       </header>
 
       {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && user && (
+      {isMobileMenuOpen && session && (
         <div
           className="fixed inset-0 z-50 md:hidden"
           onClick={closeMobileMenu}
@@ -144,96 +126,55 @@ export function Header() {
                 className="text-gray-400 hover:text-white transition-colors"
                 aria-label="Close menu"
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {/* User Info */}
             <div className="px-6 pb-6 border-b border-gray-800">
-              <span className="font-mono text-xs text-gray-400 break-all">
-                {user.email}
-              </span>
+              <Text size="xs" className="text-gray-400 break-all">
+                {session.user?.email}
+              </Text>
             </div>
 
             {/* Menu Items */}
             <nav className="flex flex-col gap-6 px-6 py-8">
-              <Link
-                href="/dashboard"
-                onClick={closeMobileMenu}
-                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-              >
+              <Link href="/dashboard" onClick={closeMobileMenu} className="text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                 Services
               </Link>
-              <Link
-                href="/dashboard/metrics"
-                onClick={closeMobileMenu}
-                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-              >
+              <Link href="/dashboard/metrics" onClick={closeMobileMenu} className="text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                 Metrics
               </Link>
-              <Link
-                href="/dashboard/errors"
-                onClick={closeMobileMenu}
-                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-              >
+              <Link href="/dashboard/errors" onClick={closeMobileMenu} className="text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                 Errors
               </Link>
-              <Link
-                href="/dashboard/performance"
-                onClick={closeMobileMenu}
-                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-              >
+              <Link href="/dashboard/performance" onClick={closeMobileMenu} className="text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                 Performance
               </Link>
-              <Link
-                href="/dashboard/health"
-                onClick={closeMobileMenu}
-                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-              >
+              <Link href="/dashboard/health" onClick={closeMobileMenu} className="text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                 Health
               </Link>
-              <Link
-                href="/dashboard/alerts"
-                onClick={closeMobileMenu}
-                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-              >
+              <Link href="/dashboard/alerts" onClick={closeMobileMenu} className="text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                 Alerts
               </Link>
-              <Link
-                href="/dashboard/graph"
-                onClick={closeMobileMenu}
-                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-              >
+              <Link href="/dashboard/graph" onClick={closeMobileMenu} className="text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                 Network Graph
               </Link>
-              <Link
-                href="/dashboard/settings"
-                onClick={closeMobileMenu}
-                className="font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
-              >
+              <Link href="/dashboard/settings" onClick={closeMobileMenu} className="text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
                 Settings
               </Link>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => {
                   closeMobileMenu();
-                  void signOut();
+                  handleSignOut();
                 }}
-                className="text-left font-mono text-lg text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
+                className="text-left justify-start"
               >
                 Sign Out
-              </button>
+              </Button>
             </nav>
           </div>
         </div>

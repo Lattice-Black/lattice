@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
-import { authenticateSupabase, AuthenticatedRequest } from '../middleware/auth';
-import { supabase } from '../lib/supabase';
+import { authenticateApiKey, AuthenticatedRequest } from '../middleware/auth';
+import { prisma } from '../lib/prisma';
 import { createHash, randomBytes } from 'crypto';
 
 /**
@@ -30,7 +30,7 @@ const maskApiKey = (key: string): string => {
 
 /**
  * API Key management routes
- * All routes require Supabase JWT authentication
+ * All routes require API key authentication
  */
 export const createApiKeysRouter = (): Router => {
   const router = Router();
@@ -39,7 +39,7 @@ export const createApiKeysRouter = (): Router => {
    * GET /api-keys
    * Get current API key (masked) for authenticated user
    */
-  router.get('/', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+  router.get('/', authenticateApiKey, async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({
@@ -52,23 +52,16 @@ export const createApiKeysRouter = (): Router => {
       const userId = req.user.id;
 
       // Get the most recent API key for the user
-      const { data: apiKey, error } = await supabase
-        .from('api_keys')
-        .select('id, name, created_at, last_used')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 is "no rows returned" error, which is fine
-        console.error('Get API key error:', error);
-        return res.status(500).json({
-          error: 'Internal Server Error',
-          message: 'Failed to retrieve API key',
-        });
-        return;
-      }
+      const apiKey = await prisma.apiKey.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          lastUsed: true,
+        },
+      });
 
       if (!apiKey) {
         return res.status(404).json({
@@ -76,17 +69,18 @@ export const createApiKeysRouter = (): Router => {
           message: 'No API key found. Please generate one.',
           hasKey: false,
         });
-        return;
       }
 
       // Return masked key info (we don't store the plain key, so we can't return it)
       return res.json({
-        id: apiKey.id,
-        name: apiKey.name,
-        createdAt: apiKey.created_at,
-        lastUsed: apiKey.last_used,
+        apiKey: {
+          id: apiKey.id,
+          name: apiKey.name,
+          createdAt: apiKey.createdAt.toISOString(),
+          lastUsed: apiKey.lastUsed?.toISOString() || null,
+          keyPreview: 'ltc_****...****',
+        },
         hasKey: true,
-        // Note: We can't show the actual key as we only store the hash
         message: 'API key is active. Use the refresh endpoint to generate a new one.',
       });
     } catch (error) {
@@ -102,7 +96,7 @@ export const createApiKeysRouter = (): Router => {
    * POST /api-keys/refresh
    * Generate a new API key and revoke the old one
    */
-  router.post('/refresh', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+  router.post('/refresh', authenticateApiKey, async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({
@@ -119,43 +113,33 @@ export const createApiKeysRouter = (): Router => {
       const keyHash = hashApiKey(newApiKey);
 
       // Delete all existing keys for this user (revoke old keys)
-      const { error: deleteError } = await supabase
-        .from('api_keys')
-        .delete()
-        .eq('user_id', userId);
-
-      if (deleteError) {
-        console.error('Delete old API keys error:', deleteError);
-        // Continue anyway - we still want to create the new key
-      }
+      await prisma.apiKey.deleteMany({
+        where: { userId },
+      });
 
       // Create new API key record
-      const { data: newKeyRecord, error: createError } = await supabase
-        .from('api_keys')
-        .insert({
-          user_id: userId,
-          key_hash: keyHash,
+      const newKeyRecord = await prisma.apiKey.create({
+        data: {
+          userId,
+          keyHash,
           name: 'Default API Key',
-        })
-        .select('id, name, created_at')
-        .single();
-
-      if (createError || !newKeyRecord) {
-        console.error('Create API key error:', createError);
-        return res.status(500).json({
-          error: 'Internal Server Error',
-          message: 'Failed to create new API key',
-        });
-        return;
-      }
+        },
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+        },
+      });
 
       // Return the new API key (this is the ONLY time it's visible)
       return res.json({
-        apiKey: newApiKey,
-        maskedKey: maskApiKey(newApiKey),
-        id: newKeyRecord.id,
-        name: newKeyRecord.name,
-        createdAt: newKeyRecord.created_at,
+        apiKey: {
+          id: newKeyRecord.id,
+          name: newKeyRecord.name,
+          key: newApiKey,
+          maskedKey: maskApiKey(newApiKey),
+          createdAt: newKeyRecord.createdAt.toISOString(),
+        },
         message: 'New API key generated successfully. Store it securely - you won\'t be able to see it again.',
       });
     } catch (error) {

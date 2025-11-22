@@ -189,3 +189,40 @@ export interface RecentMetricsResponse {
   count: number;
   metrics: ServiceMetric[];
 }
+
+// Error tracking types
+export interface ErrorItem {
+  id: string;
+  error_type: string;
+  message: string;
+  service_id: string;
+  environment: string;
+  occurrence_count: number;
+  first_seen: string;
+  last_seen: string;
+  resolved: boolean;
+  ignored: boolean;
+}
+
+export interface Breadcrumb {
+  id?: string;
+  session_id: string;
+  category: string;
+  message: string;
+  level: string;
+  data?: Record<string, unknown>;
+  timestamp: string | Date;
+}
+
+export interface StackFrame {
+  filename: string;
+  line_number: number;
+  column_number?: number;
+  function_name?: string;
+}
+
+export interface ErrorDetail extends ErrorItem {
+  stack_trace?: StackFrame[];
+  breadcrumbs?: Breadcrumb[];
+  context?: Record<string, unknown>;
+}

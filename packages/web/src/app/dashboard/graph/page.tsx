@@ -1,34 +1,79 @@
-import { Suspense } from 'react'
+'use client';
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { fetchServices } from '@/lib/api'
 import { NetworkGraph } from '@/components/NetworkGraph'
-import { LoadingSpinner } from '@/components/Loading'
+import {
+  Button,
+  Card,
+  CardContent,
+  Heading,
+  Text,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from '@duro/core'
+import type { Service } from '@/types'
 
-// Force dynamic rendering - authentication required
-export const dynamic = 'force-dynamic'
+function GraphView() {
+  const [services, setServices] = useState<Service[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-async function GraphView() {
-  const data = await fetchServices({ limit: 50 })
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const data = await fetchServices({ limit: 50 })
+        setServices(data.services || [])
+      } catch (err) {
+        console.error('Failed to fetch services:', err)
+        setError('Failed to load services')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    void loadServices()
+  }, [])
 
-  if (!data.services || data.services.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-16 h-16 border-2 border-gray-800 relative">
+          <div className="absolute inset-2 border border-gray-700 animate-pulse" />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Alert variant="error">
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (!services || services.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="w-24 h-24 border-2 border-gray-800 mb-6 mx-auto relative">
             <div className="absolute inset-4 border border-gray-800" />
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">
+          <Heading level={2} className="text-xl mb-2">
             No Services to Display
-          </h2>
-          <p className="text-sm text-gray-500 font-mono">
+          </Heading>
+          <Text size="sm" className="text-gray-500">
             Start your services with Lattice plugin to see the network graph
-          </p>
+          </Text>
         </div>
       </div>
     )
   }
 
-  return <NetworkGraph services={data.services} />
+  return <NetworkGraph services={services} />
 }
 
 export default function NetworkGraphPage() {
@@ -38,44 +83,43 @@ export default function NetworkGraphPage() {
       <div className="border-b border-gray-800 pb-8">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+            <Heading level={1} className="text-3xl md:text-4xl mb-2 tracking-tight">
               Network Graph
-            </h1>
-            <p className="text-gray-500 font-mono text-sm">
+            </Heading>
+            <Text size="sm" className="text-gray-500">
               Visual representation of service connections and dependencies
-            </p>
+            </Text>
           </div>
           <div className="flex gap-2">
-            <Link
-              href="/dashboard"
-              className="px-4 py-2 border border-gray-800 text-sm text-gray-400 hover:text-white hover:border-gray-700 transition-colors font-mono"
-            >
-              Services
+            <Link href="/dashboard">
+              <Button variant="outline" size="sm">
+                Services
+              </Button>
             </Link>
-            <Link
-              href="/dashboard/metrics"
-              className="px-4 py-2 border border-gray-800 text-sm text-gray-400 hover:text-white hover:border-gray-700 transition-colors font-mono"
-            >
-              Metrics
+            <Link href="/dashboard/metrics">
+              <Button variant="outline" size="sm">
+                Metrics
+              </Button>
             </Link>
           </div>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="border border-gray-800 bg-black/50 backdrop-blur-sm p-6">
-        <h2 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
-          Legend
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <Card>
+        <CardContent className="p-6">
+          <Text size="sm" className="font-semibold mb-4 uppercase tracking-wider text-gray-500">
+            Legend
+          </Text>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 border-2 border-gray-700 relative flex-shrink-0">
               <div className="absolute inset-2 border border-gray-800" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-700" />
             </div>
             <div>
-              <div className="text-sm text-white font-mono">Active Service</div>
-              <div className="text-xs text-gray-500">Currently running</div>
+              <Text size="sm" className="text-white font-mono">Active Service</Text>
+              <Text size="xs" className="text-gray-500">Currently running</Text>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -84,8 +128,8 @@ export default function NetworkGraphPage() {
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900" />
             </div>
             <div>
-              <div className="text-sm text-gray-500 font-mono">Inactive Service</div>
-              <div className="text-xs text-gray-600">Not responding</div>
+              <Text size="sm" className="text-gray-500 font-mono">Inactive Service</Text>
+              <Text size="xs" className="text-gray-600">Not responding</Text>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -93,17 +137,16 @@ export default function NetworkGraphPage() {
               <div className="w-8 h-px bg-gray-700" />
             </div>
             <div>
-              <div className="text-sm text-white font-mono">Connection</div>
-              <div className="text-xs text-gray-500">Service relationship</div>
+              <Text size="sm" className="text-white font-mono">Connection</Text>
+              <Text size="xs" className="text-gray-500">Service relationship</Text>
             </div>
           </div>
         </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Graph */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <GraphView />
-      </Suspense>
+      <GraphView />
     </div>
   )
 }

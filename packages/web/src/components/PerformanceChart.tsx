@@ -99,8 +99,8 @@ export function PerformanceChart({ buckets, interval }: PerformanceChartProps) {
         mode: 'index' as const,
         intersect: false,
         callbacks: {
-          label: (context: any) => {
-            return `${context.dataset.label}: ${context.parsed.y}ms`;
+          label: (context: { dataset: { label?: string }; parsed: { y: number | null } }) => {
+            return `${context.dataset.label ?? ''}: ${context.parsed.y ?? 0}ms`;
           },
         },
       },

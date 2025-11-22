@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/middleware';
+import { getToken } from 'next-auth/jwt';
 import { getMetricsTracker } from '@/lib/metrics-tracker';
 
 export async function middleware(req: NextRequest) {
   const startTime = Date.now();
-  const { supabase, response } = createClient(req);
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // Get Auth.js JWT token
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const isAuthenticated = !!token;
 
   // Protected routes - require authentication
   const protectedPaths = ['/dashboard'];
@@ -22,16 +21,18 @@ export async function middleware(req: NextRequest) {
   const isAuthPath = authPaths.includes(req.nextUrl.pathname);
 
   // If accessing protected route without session, redirect to login
-  if (isProtectedPath && !session) {
+  if (isProtectedPath && !isAuthenticated) {
     const redirectUrl = new URL('/login', req.url);
     return NextResponse.redirect(redirectUrl);
   }
 
   // If accessing auth route with session, redirect to dashboard
-  if (isAuthPath && session) {
+  if (isAuthPath && isAuthenticated) {
     const redirectUrl = new URL('/dashboard', req.url);
     return NextResponse.redirect(redirectUrl);
   }
+
+  const response = NextResponse.next();
 
   // Track metrics for API routes
   if (req.nextUrl.pathname.startsWith('/api/')) {
@@ -64,7 +65,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - api/auth (Auth.js routes)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

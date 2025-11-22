@@ -1,10 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { ErrorList } from '@/components/ErrorList';
+import { ErrorItem } from '@/types';
+import {
+  Heading,
+  Text,
+  Input,
+  Label,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from '@duro/core';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+interface ErrorsResponse {
+  errors: ErrorItem[];
+  total: number;
+}
+
+const fetcher = async (url: string): Promise<unknown> => {
+  const res = await fetch(url);
+  return res.json() as Promise<unknown>;
+};
 
 export default function ErrorsPage() {
   const [serviceFilter, setServiceFilter] = useState('');
@@ -14,64 +32,86 @@ export default function ErrorsPage() {
   if (serviceFilter) queryParams.set('service_id', serviceFilter);
   if (environmentFilter) queryParams.set('environment', environmentFilter);
 
-  const { data, error, isLoading } = useSWR(
+  const errorsResult = useSWR<ErrorsResponse>(
     `/api/v1/errors?${queryParams.toString()}`,
-    fetcher,
+    fetcher as (url: string) => Promise<ErrorsResponse>,
     {
-      refreshInterval: 5000, // Poll every 5 seconds
+      refreshInterval: 5000,
       refreshWhenHidden: false,
       refreshWhenOffline: false,
     }
   );
+  const { data, isLoading } = errorsResult;
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Error Tracking</h1>
-        <p className="text-gray-600 mt-2">
+    <div className="space-y-8">
+      {/* Page Header */}
+      <div className="border-b border-gray-800 pb-8">
+        <Heading level={1} className="text-4xl mb-2 tracking-tight">
+          Error Tracking
+        </Heading>
+        <Text size="sm" className="text-gray-500">
           Monitor and manage errors across your services
-        </p>
+        </Text>
       </div>
 
-      <div className="mb-6 flex gap-4">
-        <input
-          type="text"
-          placeholder="Filter by service..."
-          value={serviceFilter}
-          onChange={(e) => setServiceFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-        <select
-          value={environmentFilter}
-          onChange={(e) => setEnvironmentFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">All Environments</option>
-          <option value="development">Development</option>
-          <option value="staging">Staging</option>
-          <option value="production">Production</option>
-        </select>
+      {/* Filters */}
+      <div className="flex gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="service-filter">Service</Label>
+          <Input
+            id="service-filter"
+            type="text"
+            placeholder="Filter by service..."
+            value={serviceFilter}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setServiceFilter(e.target.value)
+            }
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="env-filter">Environment</Label>
+          <select
+            id="env-filter"
+            value={environmentFilter}
+            onChange={(e) => setEnvironmentFilter(e.target.value)}
+            className="w-full px-3 py-2 bg-black border-2 border-gray-800 text-white focus:border-white focus:outline-none"
+          >
+            <option value="">All Environments</option>
+            <option value="development">Development</option>
+            <option value="staging">Staging</option>
+            <option value="production">Production</option>
+          </select>
+        </div>
       </div>
 
+      {/* Loading */}
       {isLoading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-          Failed to load errors. Please try again.
-        </div>
-      )}
-
-      {data && (
-        <>
-          <div className="mb-4 text-sm text-gray-600">
-            Showing {data.errors.length} of {data.total} errors
+        <div className="flex items-center justify-center py-12">
+          <div className="w-16 h-16 border-2 border-gray-800 relative">
+            <div className="absolute inset-2 border border-gray-700 animate-pulse" />
           </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {errorsResult.error && (
+        <Alert variant="error">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load errors. Please try again.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Results */}
+      {data && (
+        <div className="space-y-4">
+          <Text size="sm" className="text-gray-500 font-mono">
+            Showing {data.errors.length} of {data.total} errors
+          </Text>
           <ErrorList errors={data.errors} />
-        </>
+        </div>
       )}
     </div>
   );

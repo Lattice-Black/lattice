@@ -6,7 +6,7 @@ interface Breadcrumb {
   category: string;
   message: string;
   level: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   timestamp: string | Date;
 }
 

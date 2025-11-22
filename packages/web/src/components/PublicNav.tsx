@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
+import { Button, Heading, Text } from '@duro/core';
 
 export function PublicNav() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,30 +26,30 @@ export function PublicNav() {
                 <div className="absolute inset-0 border border-gray-500" />
                 <div className="absolute inset-1 border border-gray-500" />
               </div>
-              <span className="font-mono text-xl font-bold uppercase tracking-tight text-white">
+              <Heading level={1} className="text-xl uppercase tracking-tight">
                 Lattice
-              </span>
+              </Heading>
             </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-10">
               <Link
                 href="/docs"
-                className="font-mono text-sm text-gray-400 hover:text-white transition-colors"
+                className="hover:text-white transition-colors"
               >
-                Docs
+                <Text size="sm" className="text-gray-400 hover:text-white">Docs</Text>
               </Link>
               <Link
                 href="/pricing"
-                className="font-mono text-sm text-gray-400 hover:text-white transition-colors"
+                className="hover:text-white transition-colors"
               >
-                Pricing
+                <Text size="sm" className="text-gray-400 hover:text-white">Pricing</Text>
               </Link>
               <Link
                 href="/login"
-                className="font-mono text-sm text-gray-400 hover:text-white transition-colors"
+                className="hover:text-white transition-colors"
               >
-                Sign In
+                <Text size="sm" className="text-gray-400 hover:text-white">Sign In</Text>
               </Link>
               <Link href="/signup">
                 <Button variant="primary" size="md">

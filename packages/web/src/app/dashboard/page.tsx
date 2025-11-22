@@ -1,9 +1,8 @@
+'use client';
+
 import Link from 'next/link'
 import { ServicesList } from '@/components/services-list'
-
-
-// Force dynamic rendering - authentication required
-export const dynamic = 'force-dynamic'
+import { Button, Heading, Text } from '@duro/core'
 
 export default function HomePage() {
   return (
@@ -12,25 +11,23 @@ export default function HomePage() {
       <div className="border-b border-gray-800 pb-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+            <Heading level={1} className="text-4xl mb-2 tracking-tight">
               Service Discovery
-            </h1>
-            <p className="text-gray-500 font-mono text-sm">
+            </Heading>
+            <Text size="sm" className="text-gray-500">
               Real-time monitoring of discovered services and their metadata
-            </p>
+            </Text>
           </div>
           <div className="flex gap-2">
-            <Link
-              href="/dashboard/metrics"
-              className="px-4 py-2 border border-gray-800 text-sm text-gray-400 hover:text-white hover:border-gray-700 transition-colors font-mono"
-            >
-              Metrics
+            <Link href="/dashboard/metrics">
+              <Button variant="outline" size="sm">
+                Metrics
+              </Button>
             </Link>
-            <Link
-              href="/dashboard/graph"
-              className="px-4 py-2 border border-gray-800 text-sm text-gray-400 hover:text-white hover:border-gray-700 transition-colors font-mono"
-            >
-              Network Graph
+            <Link href="/dashboard/graph">
+              <Button variant="outline" size="sm">
+                Network Graph
+              </Button>
             </Link>
           </div>
         </div>

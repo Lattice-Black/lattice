@@ -4,123 +4,170 @@ import {
   ServiceMetadataSubmission,
   ServiceStatus,
   generateId,
+  SDKState,
 } from '@lattice.black/core';
-import { LatticeConfig, DEFAULT_CONFIG, SubmissionResponse } from './config/types';
+import {
+  LatticeConfig,
+  ResolvedLatticeConfig,
+  resolveConfig,
+  SubmissionResponse,
+} from './config/types';
 import { RouteAnalyzer } from './discovery/route-analyzer';
 import { DependencyAnalyzer } from './discovery/dependency-analyzer';
 import { ServiceNameDetector } from './discovery/service-name-detector';
 import { ApiClient } from './client/api-client';
+import { NoOpClient, type LatticeApiClient } from './client/noop-client';
 import { MetricsTracker } from './middleware/metrics-tracker';
 import { HttpInterceptor } from './client/http-interceptor';
-import { ErrorCapture } from './middleware/error-capture';
+import { ErrorCapture, createErrorCapture } from './middleware/error-capture';
+import { safeAsync } from './utils/safe-wrapper';
 
 /**
  * Lattice Plugin for Express.js
- * Discovers routes, dependencies, and submits metadata to Lattice collector
+ *
+ * Discovers routes, dependencies, and submits metadata to Lattice collector.
+ *
+ * Features:
+ * - Privacy-first data capture (no PII by default)
+ * - Configurable sampling to reduce data volume
+ * - Event batching for performance
+ * - beforeSend hooks for filtering/modifying events
+ * - Graceful shutdown with forceFlush
+ * - No-op fallback on initialization failure
+ *
+ * Following patterns from OpenTelemetry, Sentry, and Segment.
  */
 export class LatticePlugin {
-  private config: Required<Omit<LatticeConfig, 'onAnalyzed' | 'onSubmitted' | 'onError' | 'packageJsonPath'>> & Pick<LatticeConfig, 'onAnalyzed' | 'onSubmitted' | 'onError' | 'packageJsonPath'>;
+  private config: ResolvedLatticeConfig;
   private routeAnalyzer: RouteAnalyzer;
   private dependencyAnalyzer: DependencyAnalyzer;
   private serviceNameDetector: ServiceNameDetector;
-  private apiClient: ApiClient;
+  private apiClient: LatticeApiClient;
   private metadata: ServiceMetadataSubmission | null = null;
   private submitTimer: NodeJS.Timeout | null = null;
   private metricsTracker: MetricsTracker | null = null;
   private httpInterceptor: HttpInterceptor | null = null;
   private errorCapture: ErrorCapture | null = null;
+  private state: SDKState = SDKState.Uninitialized;
+  private initError: Error | null = null;
 
   constructor(config: LatticeConfig = {}) {
-    // Merge config with defaults
-    this.config = {
-      ...DEFAULT_CONFIG,
-      ...config,
-    };
+    try {
+      this.state = SDKState.Initializing;
 
-    // Initialize analyzers
-    this.routeAnalyzer = new RouteAnalyzer();
-    this.dependencyAnalyzer = new DependencyAnalyzer();
-    this.serviceNameDetector = new ServiceNameDetector();
+      // Resolve config with defaults
+      this.config = resolveConfig(config);
 
-    // Initialize API client
-    this.apiClient = new ApiClient(this.config.apiEndpoint, this.config.apiKey);
+      // Initialize analyzers
+      this.routeAnalyzer = new RouteAnalyzer();
+      this.dependencyAnalyzer = new DependencyAnalyzer();
+      this.serviceNameDetector = new ServiceNameDetector();
+
+      // Initialize API client (or no-op if disabled)
+      if (this.config.enabled) {
+        this.apiClient = new ApiClient(this.config.apiEndpoint, this.config.apiKey);
+      } else {
+        this.apiClient = new NoOpClient();
+      }
+
+      this.state = SDKState.Ready;
+      this.log('debug', 'Plugin initialized successfully');
+    } catch (error) {
+      // Fail gracefully - use no-op client
+      this.state = SDKState.Failed;
+      this.initError = error as Error;
+      this.apiClient = new NoOpClient();
+      this.routeAnalyzer = new RouteAnalyzer();
+      this.dependencyAnalyzer = new DependencyAnalyzer();
+      this.serviceNameDetector = new ServiceNameDetector();
+      this.config = resolveConfig({});
+
+      this.log('error', `Initialization failed: ${(error as Error).message}`);
+    }
   }
 
   /**
    * Analyze Express application and discover metadata
    */
   async analyze(app: Application): Promise<ServiceMetadataSubmission> {
-    if (!this.config.enabled) {
-      console.log('Lattice plugin is disabled');
+    if (!this.config.enabled || this.state === SDKState.Failed) {
+      this.log('debug', 'Plugin is disabled or failed, returning empty metadata');
       return this.getEmptyMetadata();
     }
 
-    try {
-      // Detect service name
-      const serviceName = this.serviceNameDetector.detectServiceName(this.config.serviceName);
+    const result = await safeAsync(
+      async () => {
+        // Detect service name
+        const serviceName = this.serviceNameDetector.detectServiceName(this.config.serviceName);
 
-      // Get package.json for version
-      const pkgJson = this.getPackageJson();
+        // Store detected service name in config for use by other components
+        this.config.serviceName = serviceName;
 
-      // Create service entity
-      const serviceId = generateId();
-      const service: Service = {
-        id: serviceId,
-        name: serviceName,
-        version: pkgJson?.version,
-        environment: this.config.environment,
-        language: 'typescript',
-        framework: 'express',
-        runtime: `node-${process.version}`,
-        status: ServiceStatus.Active,
-        firstSeen: new Date(),
-        lastSeen: new Date(),
-        discoveredBy: {
-          pluginName: '@lattice/plugin-express',
-          pluginVersion: '0.1.0',
-          schemaVersion: '1.0.0',
-        },
-      };
+        // Get package.json for version
+        const pkgJson = this.getPackageJson();
 
-      // Discover routes
-      const routes = this.config.discoverRoutes
-        ? this.routeAnalyzer.analyzeRoutes(app, serviceId)
-        : [];
+        // Create service entity
+        const serviceId = generateId();
+        const service: Service = {
+          id: serviceId,
+          name: serviceName,
+          version: pkgJson?.version,
+          environment: this.config.environment as 'development' | 'staging' | 'production',
+          language: 'typescript',
+          framework: 'express',
+          runtime: `node-${process.version}`,
+          status: ServiceStatus.Active,
+          firstSeen: new Date(),
+          lastSeen: new Date(),
+          discoveredBy: {
+            pluginName: '@lattice/plugin-express',
+            pluginVersion: '0.2.0',
+            schemaVersion: '1.0.0',
+          },
+        };
 
-      // Discover dependencies
-      const dependencies = this.config.discoverDependencies
-        ? this.dependencyAnalyzer.analyzeDependencies(serviceId, this.config.packageJsonPath)
-        : [];
+        // Discover routes
+        const routes = this.config.discoverRoutes
+          ? this.routeAnalyzer.analyzeRoutes(app, serviceId)
+          : [];
 
-      // Create metadata submission
-      this.metadata = {
-        service,
-        routes,
-        dependencies,
-      };
+        // Discover dependencies
+        const dependencies = this.config.discoverDependencies
+          ? this.dependencyAnalyzer.analyzeDependencies(serviceId, this.config.packageJsonPath)
+          : [];
 
-      // Call onAnalyzed callback
-      if (this.config.onAnalyzed) {
-        this.config.onAnalyzed(this.metadata);
-      }
+        // Create metadata submission
+        this.metadata = {
+          service,
+          routes,
+          dependencies,
+        };
 
-      console.log(
-        `✅ Lattice discovered service "${serviceName}" with ${routes.length} routes and ${dependencies.length} dependencies`
-      );
+        // Call onAnalyzed callback
+        if (this.config.onAnalyzed) {
+          this.config.onAnalyzed(this.metadata);
+        }
 
-      // Auto-submit if enabled
-      if (this.config.autoSubmit) {
-        await this.submit();
-      }
+        this.log(
+          'info',
+          `Discovered service "${serviceName}" with ${routes.length} routes and ${dependencies.length} dependencies`
+        );
 
-      // Start auto-submit interval
-      this.start();
+        // Auto-submit if enabled
+        if (this.config.autoSubmit) {
+          await this.submit();
+        }
 
-      return this.metadata;
-    } catch (error) {
-      this.handleError(error as Error);
-      throw error;
-    }
+        // Start auto-submit interval
+        this.start();
+
+        return this.metadata;
+      },
+      this.getEmptyMetadata(),
+      'LatticePlugin.analyze'
+    );
+
+    return result;
   }
 
   /**
@@ -134,24 +181,28 @@ export class LatticePlugin {
     const dataToSubmit = metadata || this.metadata;
 
     if (!dataToSubmit) {
-      throw new Error('No metadata to submit. Call analyze() first.');
-    }
-
-    try {
-      const response = await this.apiClient.submitMetadata(dataToSubmit);
-
-      // Call onSubmitted callback
-      if (this.config.onSubmitted) {
-        this.config.onSubmitted(response);
-      }
-
-      console.log(`✅ Lattice metadata submitted: ${response.serviceId}`);
-
-      return response;
-    } catch (error) {
-      this.handleError(error as Error);
+      this.log('warn', 'No metadata to submit. Call analyze() first.');
       return null;
     }
+
+    const result = await safeAsync(
+      async () => {
+        const response = await this.apiClient.submitMetadata(dataToSubmit);
+
+        // Call onSubmitted callback
+        if (this.config.onSubmitted) {
+          this.config.onSubmitted(response);
+        }
+
+        this.log('debug', `Metadata submitted: ${response.serviceId}`);
+
+        return response;
+      },
+      null,
+      'LatticePlugin.submit'
+    );
+
+    return result;
   }
 
   /**
@@ -165,7 +216,7 @@ export class LatticePlugin {
    * Get service name
    */
   getServiceName(): string {
-    return this.metadata?.service.name || 'unknown';
+    return this.metadata?.service.name || this.config.serviceName || 'unknown';
   }
 
   /**
@@ -173,6 +224,20 @@ export class LatticePlugin {
    */
   isEnabled(): boolean {
     return this.config.enabled;
+  }
+
+  /**
+   * Get SDK state
+   */
+  getState(): SDKState {
+    return this.state;
+  }
+
+  /**
+   * Get initialization error if any
+   */
+  getInitError(): Error | null {
+    return this.initError;
   }
 
   /**
@@ -187,8 +252,8 @@ export class LatticePlugin {
       if (this.metadata) {
         // Update lastSeen timestamp
         this.metadata.service.lastSeen = new Date();
-        this.submit().catch((error) => {
-          console.error('Auto-submit failed:', error);
+        this.submit().catch(() => {
+          // Error already logged by safeAsync
         });
       }
     }, this.config.submitInterval);
@@ -208,6 +273,65 @@ export class LatticePlugin {
   }
 
   /**
+   * Force flush all pending events
+   * Call this before shutdown to ensure all data is sent
+   */
+  async forceFlush(timeoutMs?: number): Promise<void> {
+    this.log('debug', 'Force flushing all pending events');
+
+    const promises: Promise<void>[] = [];
+
+    if (this.errorCapture) {
+      promises.push(this.errorCapture.forceFlush());
+    }
+
+    if (this.metricsTracker) {
+      promises.push(this.metricsTracker.forceFlush());
+    }
+
+    // Wait for all flushes with timeout
+    if (timeoutMs) {
+      await Promise.race([
+        Promise.allSettled(promises),
+        new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+      ]);
+    } else {
+      await Promise.allSettled(promises);
+    }
+  }
+
+  /**
+   * Graceful shutdown
+   * Stops accepting new events, flushes pending data, and cleans up resources
+   */
+  async shutdown(timeoutMs: number = 10000): Promise<void> {
+    if (this.state === SDKState.ShuttingDown || this.state === SDKState.Shutdown) {
+      return;
+    }
+
+    this.state = SDKState.ShuttingDown;
+    this.log('debug', 'Shutting down...');
+
+    // Stop accepting new events
+    this.stop();
+
+    // Flush pending data
+    await this.forceFlush(timeoutMs);
+
+    // Clean up resources
+    if (this.errorCapture) {
+      this.errorCapture.shutdown();
+    }
+
+    if (this.metricsTracker) {
+      this.metricsTracker.shutdown();
+    }
+
+    this.state = SDKState.Shutdown;
+    this.log('debug', 'Shutdown complete');
+  }
+
+  /**
    * Create metrics tracking middleware
    * Can be called before or after analyze() - uses configured service name
    */
@@ -218,7 +342,13 @@ export class LatticePlugin {
       this.metricsTracker = new MetricsTracker(
         serviceName,
         this.config.apiEndpoint,
-        this.config.apiKey
+        this.config.apiKey,
+        {
+          enabled: this.config.enabled,
+          debug: this.config.debug,
+          sampling: this.config.sampling,
+          batching: this.config.batching,
+        }
       );
     }
     return this.metricsTracker.middleware();
@@ -260,25 +390,58 @@ export class LatticePlugin {
   errorHandler() {
     if (!this.errorCapture) {
       const serviceName = this.serviceNameDetector.detectServiceName(this.config.serviceName);
-      this.errorCapture = new ErrorCapture({
+
+      // Create error capture with full config
+      this.errorCapture = createErrorCapture({
+        ...this.config,
         serviceName,
-        apiEndpoint: this.config.apiEndpoint,
-        apiKey: this.config.apiKey,
-        environment: this.config.environment,
-        enabled: this.config.enabled,
       });
     }
     return this.errorCapture.middleware();
   }
 
   /**
-   * Handle errors with callback
+   * Manually capture an error
    */
-  private handleError(error: Error): void {
-    if (this.config.onError) {
-      this.config.onError(error);
-    } else {
-      console.error('Lattice error:', error);
+  async captureError(error: Error, context?: Record<string, unknown>): Promise<void> {
+    if (!this.errorCapture) {
+      // Create error capture on first use
+      const serviceName = this.serviceNameDetector.detectServiceName(this.config.serviceName);
+      this.errorCapture = createErrorCapture({
+        ...this.config,
+        serviceName,
+      });
+    }
+
+    await this.errorCapture.captureError(error, context);
+  }
+
+  /**
+   * Get the resolved configuration
+   */
+  getConfig(): Readonly<ResolvedLatticeConfig> {
+    return this.config;
+  }
+
+  // Private methods
+
+  /**
+   * Conditional logging
+   */
+  private log(level: 'debug' | 'info' | 'warn' | 'error', message: string): void {
+    const prefix = '[Lattice]';
+
+    if (level === 'error') {
+      console.error(`${prefix} ${message}`);
+      if (this.config.onError) {
+        this.config.onError(new Error(message));
+      }
+    } else if (level === 'warn') {
+      console.warn(`${prefix} ${message}`);
+    } else if (level === 'info') {
+      console.log(`${prefix} ✅ ${message}`);
+    } else if (this.config.debug) {
+      console.log(`${prefix} ${message}`);
     }
   }
 
@@ -294,7 +457,7 @@ export class LatticePlugin {
       if (fs.existsSync(pkgPath)) {
         return JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
       }
-    } catch (error) {
+    } catch {
       // Ignore
     }
     return null;
@@ -315,7 +478,7 @@ export class LatticePlugin {
         lastSeen: new Date(),
         discoveredBy: {
           pluginName: '@lattice/plugin-express',
-          pluginVersion: '0.1.0',
+          pluginVersion: '0.2.0',
           schemaVersion: '1.0.0',
         },
       },
@@ -329,6 +492,16 @@ export class LatticePlugin {
 export * from './config/types';
 export { HttpInterceptor } from './client/http-interceptor';
 export { ErrorCapture } from './middleware/error-capture';
+export { NoOpClient, type LatticeApiClient } from './client/noop-client';
+export { EventQueue, createEventQueue } from './utils/event-queue';
+export { Sampler, createSampler } from './utils/sampler';
+export { DataScrubber, createDataScrubber } from './utils/data-scrubber';
+export {
+  safeAsync,
+  safeSync,
+  createSafeAsyncWrapper,
+  createSafeSyncWrapper,
+} from './utils/safe-wrapper';
 
 // Convenience alias
 export { LatticePlugin as LatticeExpress } from './index';

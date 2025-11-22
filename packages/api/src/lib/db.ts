@@ -1,14 +1,14 @@
 import { Pool } from 'pg';
 
 /**
- * PostgreSQL connection pool (connects to Supabase or local PostgreSQL)
+ * PostgreSQL connection pool (connects to Railway PostgreSQL)
  */
 export const pool = new Pool({
   connectionString: process.env['DATABASE_URL'],
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
-  ssl: process.env['DATABASE_URL']?.includes('supabase.com')
+  ssl: process.env['DATABASE_URL']?.includes('railway.app')
     ? { rejectUnauthorized: false }
     : false,
 });

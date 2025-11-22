@@ -2,10 +2,7 @@
  * Next.js Instrumentation Hook
  *
  * This runs ONCE when the Next.js server starts, before any routes are loaded.
- * Perfect for initializing logging and monitoring.
- *
- * NOTE: Service discovery uses CLI tool in postbuild (see package.json)
- * This is the recommended approach for Vercel to avoid cold start penalties.
+ * Perfect for initializing logging, service discovery, and monitoring.
  */
 
 /**
@@ -22,8 +19,8 @@ export async function register() {
       // Initialize logging infrastructure
       await initializeLogging()
 
-      // Initialize metrics tracking
-      await initializeMetrics()
+      // Initialize Lattice service discovery plugin
+      await initializeLatticePlugin()
 
       console.log('✅ Server instrumentation complete')
     } catch (error) {
@@ -56,35 +53,50 @@ async function initializeLogging() {
 }
 
 /**
- * Initialize metrics tracking
- * - Tracks API route performance and submits to Lattice API
- * - Requires LATTICE_API_ENDPOINT and optionally LATTICE_API_KEY
+ * Initialize Lattice service discovery plugin
+ * - Discovers API routes and dependencies
+ * - Submits service metadata to Lattice API
  */
-async function initializeMetrics() {
+async function initializeLatticePlugin() {
   try {
-    // Dynamic import to avoid bundling issues
-    const { initMetricsTracker } = await import('./lib/metrics-tracker')
-    const { initHttpInterceptor } = await import('./lib/http-interceptor')
+    // Use eval('require') to bypass webpack's static analysis.
+    // This is the standard pattern for loading server-only Node.js packages
+    // in Next.js instrumentation files. The plugin uses fs/glob which can't be bundled.
+    // eslint-disable-next-line no-eval
+    const { LatticeNextPlugin } = eval("require('@lattice.black/plugin-nextjs')") as typeof import('@lattice.black/plugin-nextjs')
 
     const apiEndpoint = process.env.LATTICE_API_ENDPOINT || 'https://lattice-production.up.railway.app/api/v1'
     const apiKey = process.env.LATTICE_API_KEY
-    const serviceName = 'lattice-web'
 
     if (!apiKey) {
-      console.warn('⚠️  LATTICE_API_KEY not set - metrics will be submitted without authentication')
+      console.warn('⚠️  LATTICE_API_KEY not set - service discovery will submit without authentication')
     }
 
-    initMetricsTracker({
-      serviceName,
+    const lattice = new LatticeNextPlugin({
+      serviceName: 'lattice-web',
+      environment: process.env.NODE_ENV || 'development',
       apiEndpoint,
       apiKey,
+      enabled: true,
+      autoSubmit: true,
+      onAnalyzed: (metadata) => {
+        console.log('📊 Service metadata analyzed:', {
+          service: metadata.service.name,
+          routes: metadata.routes?.length ?? 0,
+          dependencies: metadata.dependencies?.length ?? 0,
+        })
+      },
+      onSubmitted: (response: { serviceId: string }) => {
+        console.log('✅ Metadata submitted to Lattice:', response.serviceId)
+      },
+      onError: (error) => {
+        console.error('❌ Lattice plugin error:', error.message)
+      },
     })
 
-    // Initialize HTTP interceptor for outgoing requests
-    initHttpInterceptor(serviceName)
-
-    console.log('📊 Metrics tracking and HTTP interceptor initialized')
+    await lattice.analyze()
+    console.log('🔍 Lattice service discovery initialized')
   } catch (error) {
-    console.error('Failed to initialize metrics tracking:', error)
+    console.error('Failed to initialize Lattice plugin:', error)
   }
 }

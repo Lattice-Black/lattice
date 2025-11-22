@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { MetadataService } from '../services/metadata-service';
 import { MetricsService } from '../services/metrics-service';
-import { authenticateSupabase, AuthenticatedRequest } from '../middleware/auth';
+import { authenticateApiKey, AuthenticatedRequest } from '../middleware/auth';
 
 /**
  * Service query routes for dashboard
@@ -15,9 +15,9 @@ export const createServicesRouter = (): Router => {
   /**
    * GET /services
    * List all services with optional filtering (user-scoped)
-   * Requires Supabase JWT authentication
+   * Requires API key authentication
    */
-  router.get('/', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+  router.get('/', authenticateApiKey, async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({
@@ -59,9 +59,9 @@ export const createServicesRouter = (): Router => {
   /**
    * GET /services/:id
    * Get service details by ID or name (user-scoped)
-   * Requires Supabase JWT authentication
+   * Requires API key authentication
    */
-  router.get('/:id', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+  router.get('/:id', authenticateApiKey, async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({
@@ -110,9 +110,9 @@ export const createServicesRouter = (): Router => {
   /**
    * GET /services/:id/metrics
    * Get metrics for a specific service (user-scoped)
-   * Requires Supabase JWT authentication
+   * Requires API key authentication
    */
-  router.get('/:id/metrics', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+  router.get('/:id/metrics', authenticateApiKey, async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({

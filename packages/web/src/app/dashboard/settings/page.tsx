@@ -1,8 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
-import { createClient } from '@/lib/supabase/client';
+import { useSession } from 'next-auth/react';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Heading,
+  Text,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from '@duro/core';
 
 interface ApiKeyInfo {
   id: string;
@@ -10,19 +21,21 @@ interface ApiKeyInfo {
   createdAt: string;
   lastUsed: string | null;
   hasKey: boolean;
+  keyPreview?: string;
   message?: string;
 }
 
 interface RegenerateResponse {
-  apiKey: string;
-  maskedKey: string;
-  id: string;
-  name: string | null;
-  createdAt: string;
-  message: string;
+  apiKey: {
+    id: string;
+    name: string | null;
+    key: string;
+    createdAt: string;
+  };
 }
 
 export default function SettingsPage() {
+  const { data: session, status } = useSession();
   const [apiKeyInfo, setApiKeyInfo] = useState<ApiKeyInfo | null>(null);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,33 +44,30 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  const supabase = createClient();
-
   // Fetch current API key info
   useEffect(() => {
     const fetchApiKeyInfo = async () => {
+      if (status !== 'authenticated') {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
 
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (!session?.access_token) {
-          setError('Not authenticated');
-          setIsLoading(false);
-          return;
-        }
-
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
-        const response = await fetch(`${apiUrl}/api-keys`, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        });
+        const response = await fetch('/api/api-keys');
 
         if (response.ok) {
-          const data = await response.json() as ApiKeyInfo;
-          setApiKeyInfo(data);
+          const data = await response.json() as { apiKey: { id: string; name: string | null; createdAt: string; lastUsed: string | null; keyPreview?: string } };
+          setApiKeyInfo({
+            id: data.apiKey.id,
+            name: data.apiKey.name,
+            createdAt: data.apiKey.createdAt,
+            lastUsed: data.apiKey.lastUsed,
+            hasKey: true,
+            keyPreview: data.apiKey.keyPreview,
+          });
         } else if (response.status === 404) {
           // No API key exists yet
           setApiKeyInfo({
@@ -69,8 +79,8 @@ export default function SettingsPage() {
             message: 'No API key found. Please generate one.',
           });
         } else {
-          const errorData = await response.json() as { message?: string };
-          setError(errorData.message || 'Failed to fetch API key info');
+          const errorData = await response.json() as { error?: string };
+          setError(errorData.error || 'Failed to fetch API key info');
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch API key info');
@@ -80,7 +90,7 @@ export default function SettingsPage() {
     };
 
     void fetchApiKeyInfo();
-  }, [supabase]);
+  }, [status]);
 
   const handleRegenerateConfirm = async () => {
     try {
@@ -88,36 +98,25 @@ export default function SettingsPage() {
       setError(null);
       setShowConfirmModal(false);
 
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        setError('Not authenticated');
-        return;
-      }
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
-      const response = await fetch(`${apiUrl}/api-keys/refresh`, {
+      const response = await fetch('/api/api-keys/refresh', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
       });
 
       if (!response.ok) {
-        const errorData = await response.json() as { message?: string };
-        throw new Error(errorData.message || 'Failed to regenerate API key');
+        const errorData = await response.json() as { error?: string };
+        throw new Error(errorData.error || 'Failed to regenerate API key');
       }
 
       const data = await response.json() as RegenerateResponse;
 
       // Set the new API key to display it once
-      setNewApiKey(data.apiKey);
+      setNewApiKey(data.apiKey.key);
 
       // Update the info
       setApiKeyInfo({
-        id: data.id,
-        name: data.name,
-        createdAt: data.createdAt,
+        id: data.apiKey.id,
+        name: data.apiKey.name,
+        createdAt: data.apiKey.createdAt,
         lastUsed: null,
         hasKey: true,
       });
@@ -145,104 +144,130 @@ export default function SettingsPage() {
     return new Date(dateString).toLocaleString();
   };
 
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-16 h-16 border-2 border-gray-800 relative">
+          <div className="absolute inset-2 border border-gray-700 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="w-24 h-24 border-2 border-gray-800 mb-6 mx-auto relative">
+            <div className="absolute inset-4 border border-gray-800" />
+          </div>
+          <Heading level={3} className="mb-2">
+            Authentication Required
+          </Heading>
+          <Text size="sm" className="text-gray-500 font-mono">
+            Please sign in to view settings
+          </Text>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="border-b border-gray-800 pb-8">
-        <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+        <Heading level={1} className="text-4xl mb-2 tracking-tight">
           Settings
-        </h1>
-        <p className="text-gray-500 font-mono text-sm">
+        </Heading>
+        <Text size="sm" className="text-gray-500">
           Manage your API keys and account settings
-        </p>
+        </Text>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="border border-red-900 bg-red-950/20 p-4">
-          <p className="font-mono text-sm text-red-500">{error}</p>
-        </div>
+        <Alert variant="error">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* New API Key Display (one-time) */}
       {newApiKey && (
-        <div className="border border-green-900 bg-green-950/20 p-6 space-y-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-mono text-sm uppercase tracking-wider text-green-400 mb-2">
-                New API Key Generated
-              </h3>
-              <p className="font-mono text-xs text-gray-400 mb-4">
+        <Alert variant="success">
+          <AlertTitle>New API Key Generated</AlertTitle>
+          <AlertDescription>
+            <div className="space-y-4 mt-2">
+              <Text size="xs" className="text-gray-400">
                 Copy this key now - you won&apos;t be able to see it again!
-              </p>
+              </Text>
+              <div className="flex gap-2">
+                <div className="flex-1 border border-gray-800 bg-black p-3 font-mono text-sm text-white break-all">
+                  {newApiKey}
+                </div>
+                <Button
+                  onClick={() => void handleCopyKey()}
+                  variant="primary"
+                  size="md"
+                >
+                  {copySuccess ? 'Copied!' : 'Copy'}
+                </Button>
+              </div>
+              <Button
+                onClick={handleCloseNewKey}
+                variant="ghost"
+                size="sm"
+              >
+                Dismiss
+              </Button>
             </div>
-            <button
-              onClick={handleCloseNewKey}
-              className="text-gray-500 hover:text-white transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="flex gap-2">
-            <div className="flex-1 border border-gray-800 bg-black p-3 font-mono text-sm text-white break-all">
-              {newApiKey}
-            </div>
-            <Button
-              onClick={() => void handleCopyKey()}
-              variant="primary"
-              size="md"
-            >
-              {copySuccess ? 'Copied!' : 'Copy'}
-            </Button>
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* API Key Section */}
-      <div className="border border-gray-800 bg-black/50">
-        <div className="border-b border-gray-800 p-6">
-          <h2 className="font-mono text-lg uppercase tracking-wider text-white">
-            API Key
-          </h2>
-        </div>
-
-        <div className="p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>API Key</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
           {isLoading ? (
-            <div className="text-center py-8">
-              <p className="font-mono text-sm text-gray-500">Loading...</p>
+            <div className="flex items-center justify-center py-8">
+              <div className="w-12 h-12 border-2 border-gray-800 relative">
+                <div className="absolute inset-2 border border-gray-700 animate-pulse" />
+              </div>
             </div>
           ) : apiKeyInfo?.hasKey ? (
             <>
               <div className="space-y-4">
                 <div>
-                  <label className="font-mono text-xs uppercase tracking-wider text-gray-500 block mb-2">
+                  <Text size="xs" className="uppercase tracking-wider text-gray-500 block mb-2">
                     Current API Key
-                  </label>
+                  </Text>
                   <div className="border border-gray-800 bg-black p-3 font-mono text-sm text-gray-400">
-                    ltc_****...****
+                    {apiKeyInfo.keyPreview || 'ltc_****...****'}
                   </div>
-                  <p className="font-mono text-xs text-gray-600 mt-2">
+                  <Text size="xs" className="text-gray-600 mt-2">
                     API keys are hashed and cannot be retrieved. Generate a new one to get a visible key.
-                  </p>
+                  </Text>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="font-mono text-xs uppercase tracking-wider text-gray-500 block mb-2">
+                    <Text size="xs" className="uppercase tracking-wider text-gray-500 block mb-2">
                       Created
-                    </label>
-                    <p className="font-mono text-sm text-white">
+                    </Text>
+                    <Text size="sm" className="text-white font-mono">
                       {formatDate(apiKeyInfo.createdAt)}
-                    </p>
+                    </Text>
                   </div>
                   <div>
-                    <label className="font-mono text-xs uppercase tracking-wider text-gray-500 block mb-2">
+                    <Text size="xs" className="uppercase tracking-wider text-gray-500 block mb-2">
                       Last Used
-                    </label>
-                    <p className="font-mono text-sm text-white">
+                    </Text>
+                    <Text size="sm" className="text-white font-mono">
                       {formatDate(apiKeyInfo.lastUsed || '')}
-                    </p>
+                    </Text>
                   </div>
                 </div>
               </div>
@@ -252,29 +277,29 @@ export default function SettingsPage() {
                   onClick={() => setShowConfirmModal(true)}
                   variant="ghost"
                   size="md"
-                  isLoading={isRegenerating}
+                  disabled={isRegenerating}
                 >
-                  Regenerate API Key
+                  {isRegenerating ? 'Regenerating...' : 'Regenerate API Key'}
                 </Button>
               </div>
             </>
           ) : (
             <div className="text-center py-8 space-y-4">
-              <p className="font-mono text-sm text-gray-500">
+              <Text size="sm" className="text-gray-500">
                 No API key found. Generate one to get started.
-              </p>
+              </Text>
               <Button
                 onClick={() => setShowConfirmModal(true)}
                 variant="primary"
                 size="md"
-                isLoading={isRegenerating}
+                disabled={isRegenerating}
               >
-                Generate API Key
+                {isRegenerating ? 'Generating...' : 'Generate API Key'}
               </Button>
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
@@ -286,49 +311,52 @@ export default function SettingsPage() {
           />
 
           {/* Modal */}
-          <div className="relative bg-black border border-gray-800 max-w-md w-full p-6 space-y-4">
-            <h3 className="font-mono text-lg uppercase tracking-wider text-white">
-              {apiKeyInfo?.hasKey ? 'Regenerate API Key?' : 'Generate API Key?'}
-            </h3>
+          <Card className="relative max-w-md w-full">
+            <CardHeader>
+              <CardTitle>
+                {apiKeyInfo?.hasKey ? 'Regenerate API Key?' : 'Generate API Key?'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {apiKeyInfo?.hasKey && (
+                  <Alert variant="warning">
+                    <AlertTitle>Warning</AlertTitle>
+                    <AlertDescription>
+                      This will invalidate your current API key immediately. Any applications using the old key will stop working.
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-            {apiKeyInfo?.hasKey && (
-              <div className="border-l-2 border-yellow-500 pl-4">
-                <p className="font-mono text-sm text-yellow-500">
-                  Warning: This will invalidate your current API key immediately.
-                </p>
-                <p className="font-mono text-xs text-gray-400 mt-2">
-                  Any applications using the old key will stop working.
-                </p>
+                <Text size="sm" className="text-gray-400">
+                  {apiKeyInfo?.hasKey
+                    ? 'A new API key will be generated and the old one will be revoked.'
+                    : 'A new API key will be generated for your account.'}
+                </Text>
+
+                <div className="flex gap-3 pt-4 border-t border-gray-800">
+                  <Button
+                    onClick={() => void handleRegenerateConfirm()}
+                    variant="primary"
+                    size="md"
+                    disabled={isRegenerating}
+                    className="flex-1"
+                  >
+                    {isRegenerating ? 'Processing...' : (apiKeyInfo?.hasKey ? 'Regenerate' : 'Generate')}
+                  </Button>
+                  <Button
+                    onClick={() => setShowConfirmModal(false)}
+                    variant="ghost"
+                    size="md"
+                    disabled={isRegenerating}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
-            )}
-
-            <p className="font-mono text-sm text-gray-400">
-              {apiKeyInfo?.hasKey
-                ? 'A new API key will be generated and the old one will be revoked.'
-                : 'A new API key will be generated for your account.'}
-            </p>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={() => void handleRegenerateConfirm()}
-                variant="primary"
-                size="md"
-                isLoading={isRegenerating}
-                className="flex-1"
-              >
-                {apiKeyInfo?.hasKey ? 'Regenerate' : 'Generate'}
-              </Button>
-              <Button
-                onClick={() => setShowConfirmModal(false)}
-                variant="ghost"
-                size="md"
-                disabled={isRegenerating}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

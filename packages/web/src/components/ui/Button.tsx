@@ -1,40 +1,43 @@
-import React from 'react';
+/**
+ * Button component - wrapper around @duro/core Button
+ * Maintains backwards compatibility with existing props
+ */
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  isLoading?: boolean;
+import { Button as DuroButton } from '@duro/core'
+import type { ButtonVariant } from '@duro/core'
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'ghost'
+  size?: 'sm' | 'md' | 'lg'
+  isLoading?: boolean
+  children?: ReactNode
 }
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', isLoading, className = '', children, disabled, ...props }, ref) => {
-    const baseStyles = 'font-mono uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+const variantMap: Record<string, ButtonVariant> = {
+  primary: 'primary',
+  secondary: 'secondary',
+  ghost: 'ghost',
+}
 
-    const variantStyles = {
-      primary: 'bg-white text-black border border-gray-800 hover:bg-gray-100 disabled:hover:bg-white',
-      secondary: 'bg-black text-white border border-gray-800 hover:border-gray-700 disabled:hover:border-gray-800',
-      ghost: 'bg-transparent text-gray-400 border border-gray-800 hover:text-white hover:border-gray-700 disabled:hover:text-gray-400 disabled:hover:border-gray-800',
-    };
-
-    const sizeStyles = {
-      sm: 'px-3 py-1.5 text-xs',
-      md: 'px-4 py-2 text-sm',
-      lg: 'px-6 py-3 text-base',
-    };
-
-    const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
-
-    return (
-      <button
-        ref={ref}
-        className={combinedClassName}
-        disabled={disabled || isLoading}
-        {...props}
-      >
-        {isLoading ? 'Loading...' : children}
-      </button>
-    );
-  }
-);
-
-Button.displayName = 'Button';
+export function Button({
+  variant = 'primary',
+  size = 'md',
+  isLoading,
+  className = '',
+  children,
+  disabled,
+  ...props
+}: ButtonProps) {
+  return (
+    <DuroButton
+      variant={variantMap[variant]}
+      size={size}
+      className={className}
+      disabled={disabled || isLoading}
+      {...props}
+    >
+      {isLoading ? 'Loading...' : children}
+    </DuroButton>
+  )
+}

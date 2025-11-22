@@ -16,6 +16,69 @@ import type { ErrorEventInput } from '../services/error-service';
 const router = Router();
 
 /**
+ * POST /errors/batch - Batch ingest error events
+ */
+router.post('/batch', async (req, res) => {
+  try {
+    const { errors } = req.body;
+
+    if (!Array.isArray(errors) || errors.length === 0) {
+      return res.status(400).json({
+        error: 'validation_error',
+        message: 'errors must be a non-empty array',
+      });
+    }
+
+    const results = [];
+    const failures = [];
+
+    for (const input of errors) {
+      try {
+        // Validate required fields
+        if (!input.service_id || !input.environment || !input.error_type || !input.message) {
+          failures.push({ input, error: 'Missing required fields' });
+          continue;
+        }
+
+        // Sanitize error before storage
+        const sanitized = sanitizeError({
+          message: input.message,
+          stack: input.raw_stack,
+          context: input.context,
+        });
+
+        const sanitizedInput: ErrorEventInput = {
+          ...input,
+          message: sanitized.message,
+          raw_stack: sanitized.stack,
+          context: sanitized.context,
+          stack_trace: input.stack_trace || [],
+        };
+
+        const result = await storeError(sanitizedInput);
+        results.push(result);
+      } catch (err) {
+        failures.push({ input, error: (err as Error).message });
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      processed: results.length,
+      failed: failures.length,
+      results,
+      failures: failures.length > 0 ? failures : undefined,
+    });
+  } catch (error) {
+    console.error('Batch error ingestion failed:', error);
+    return res.status(500).json({
+      error: 'internal_error',
+      message: 'Failed to batch ingest error events',
+    });
+  }
+});
+
+/**
  * POST /errors - Ingest error event
  */
 router.post('/', async (req, res) => {

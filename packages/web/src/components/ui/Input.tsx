@@ -1,45 +1,42 @@
-import React from 'react';
+/**
+ * Input component - wrapper around @duro/core Input
+ * Maintains backwards compatibility with existing props (label, error message)
+ */
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
+import { Input as DuroInput, Label, Text } from '@duro/core'
+import type { InputHTMLAttributes } from 'react'
+import { forwardRef } from 'react'
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  label?: string
+  error?: string
 }
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, className = '', id, ...props }, ref) => {
-    const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  function Input({ label, error, className = '', id, ...props }, ref) {
+    const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
 
     return (
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="block font-mono text-xs text-gray-500 uppercase tracking-wider"
-          >
+          <Label htmlFor={inputId}>
             {label}
-          </label>
+          </Label>
         )}
-        <input
+        <DuroInput
           ref={ref}
           id={inputId}
-          className={`
-            w-full bg-black border border-gray-800 px-4 py-3 text-white
-            font-mono text-sm placeholder:text-gray-600
-            focus:outline-none focus:border-gray-700
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${error ? 'border-red-900' : ''}
-            ${className}
-          `}
+          error={!!error}
+          fullWidth
+          className={className}
           {...props}
         />
         {error && (
-          <p className="font-mono text-xs text-red-500">
+          <Text size="xs" className="text-red-500">
             {error}
-          </p>
+          </Text>
         )}
       </div>
-    );
+    )
   }
-);
-
-Input.displayName = 'Input';
+)

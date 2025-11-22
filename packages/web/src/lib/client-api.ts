@@ -6,7 +6,7 @@ import type {
   MetricsStatsResponse,
   MetricsConnectionsResponse
 } from '@/types'
-import { getSessionToken } from './supabase/utils'
+import { getSession } from 'next-auth/react'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'
 
@@ -14,15 +14,15 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/a
  * Get headers with authentication token and distributed tracing (client-side)
  */
 async function getAuthHeaders(): Promise<HeadersInit> {
-  const token = await getSessionToken()
+  const session = await getSession()
 
-  if (!token) {
+  if (!session?.user) {
     throw new Error('Authentication required. Please sign in.')
   }
 
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
+    'X-User-Id': session.user.id,
     'X-Origin-Service': 'lattice-web', // Distributed tracing header
   }
 }

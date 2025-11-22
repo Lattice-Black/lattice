@@ -1,7 +1,7 @@
-import { ServicesList } from '@/components/services-list'
+'use client';
 
-// Force dynamic rendering - authentication required
-export const dynamic = 'force-dynamic'
+import { ServicesList } from '@/components/services-list'
+import { Heading, Text } from '@duro/core'
 
 export default function ServicesPage() {
   return (
@@ -9,12 +9,12 @@ export default function ServicesPage() {
       {/* Page Header */}
       <div className="border-b border-gray-800 pb-8">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+          <Heading level={1} className="text-4xl mb-2 tracking-tight">
             Services
-          </h1>
-          <p className="text-gray-500 font-mono text-sm">
+          </Heading>
+          <Text size="sm" className="text-gray-500">
             All discovered services and their metadata
-          </p>
+          </Text>
         </div>
       </div>
 

@@ -1,0 +1,9 @@
+node_modules
+*.log
+.env
+.env.*
+!.env.example
+.git
+.turbo
+tests
+tsconfig.tsbuildinfo

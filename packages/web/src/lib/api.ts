@@ -7,23 +7,28 @@ import type {
   MetricsConnectionsResponse,
   RecentMetricsResponse
 } from '@/types'
-import { getSessionToken } from './supabase/server-utils'
+import { auth } from './auth'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'
 
 /**
- * Get headers with authentication token and distributed tracing
+ * Get headers with API key authentication and distributed tracing
  */
 async function getAuthHeaders(): Promise<HeadersInit> {
-  const token = await getSessionToken()
+  const session = await auth()
 
-  if (!token) {
+  if (!session?.user) {
     throw new Error('Authentication required. Please sign in.')
+  }
+
+  const apiKey = process.env.LATTICE_API_KEY
+  if (!apiKey) {
+    throw new Error('LATTICE_API_KEY environment variable is not set')
   }
 
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
+    'X-Lattice-API-Key': apiKey,
     'X-Origin-Service': 'lattice-web', // Distributed tracing header
   }
 }
