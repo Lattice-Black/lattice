@@ -1,0 +1,26 @@
+# Go
+/lattice
+*.exe
+*.test
+*.out
+vendor/
+
+# Frontend
+web/app/node_modules/
+web/app/dist/
+web/site/node_modules/
+web/site/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+*.db
+*.db-journal
