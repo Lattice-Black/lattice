@@ -18,8 +18,10 @@ type Config struct {
 
 // ServerConfig holds HTTP server configuration.
 type ServerConfig struct {
-	Port int    `yaml:"port"`
-	Host string `yaml:"host"`
+	Port        int      `yaml:"port"`
+	Host        string   `yaml:"host"`
+	APIKey      string   `yaml:"apiKey"`
+	CORSOrigins []string `yaml:"corsOrigins"`
 }
 
 // DatabaseConfig holds SQLite database configuration.
