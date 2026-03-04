@@ -1,0 +1,53 @@
+name: Build & Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install deps
+        run: sudo apt-get install -y gcc
+
+      - name: Test
+        run: export PATH=$PATH:/usr/local/go/bin && go test ./...
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build frontend
+        run: |
+          cd web/site && npm ci && npm run build
+          cd ../app && npm ci && npm run build
+
+      - name: Copy dist
+        run: |
+          mkdir -p internal/web/site internal/web/app
+          cp -r web/site/dist/. internal/web/site/
+          cp -r web/app/dist/. internal/web/app/
+
+      - name: Build binary
+        run: CGO_ENABLED=1 go build -o lattice ./cmd/lattice
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lattice-linux-amd64
+          path: lattice

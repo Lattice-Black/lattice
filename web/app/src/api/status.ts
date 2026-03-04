@@ -29,5 +29,5 @@ export interface StatusResponse {
 }
 
 export const statusApi = {
-  get: () => api.get<StatusResponse>('/status', { skipAuth: true }),
+  get: () => api.get<StatusResponse>('/api/status', { skipAuth: true }),
 }

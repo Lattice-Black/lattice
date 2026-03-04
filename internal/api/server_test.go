@@ -79,7 +79,7 @@ func TestPublicStatusNoAuth(t *testing.T) {
 	defer cleanup()
 
 	// Public status should work without auth
-	req := httptest.NewRequest(http.MethodGet, "/status", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 	w := httptest.NewRecorder()
 
 	server.Handler().ServeHTTP(w, req)
@@ -611,7 +611,7 @@ func TestStatusHistory(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get history (public, no auth required)
-	req = httptest.NewRequest(http.MethodGet, "/status/history/"+monitor.ID, nil)
+	req = httptest.NewRequest(http.MethodGet, "/api/status/history/"+monitor.ID, nil)
 	w = httptest.NewRecorder()
 
 	server.Handler().ServeHTTP(w, req)
@@ -629,7 +629,7 @@ func TestStatusHistoryNotFound(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	req := httptest.NewRequest(http.MethodGet, "/status/history/nonexistent-id", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/status/history/nonexistent-id", nil)
 	w := httptest.NewRecorder()
 
 	server.Handler().ServeHTTP(w, req)

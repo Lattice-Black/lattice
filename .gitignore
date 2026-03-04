@@ -11,6 +11,10 @@ web/app/dist/
 web/site/node_modules/
 web/site/dist/
 
+# Embedded frontend build artifacts (generated from web/*/dist)
+internal/web/site/
+internal/web/app/
+
 # IDE
 .idea/
 .vscode/
