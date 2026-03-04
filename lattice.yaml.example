@@ -1,0 +1,120 @@
+# Lattice Configuration Example
+# Copy this file to lattice.yaml and modify as needed
+
+# HTTP server settings
+server:
+  # Port to listen on
+  port: 8080
+  # Host to bind to (0.0.0.0 for all interfaces)
+  host: "0.0.0.0"
+  # API key for authentication (leave empty to disable)
+  apiKey: "your-secret-api-key"
+  # CORS allowed origins
+  corsOrigins:
+    - "*"
+
+# Database settings
+database:
+  # Path to SQLite database file
+  path: "./lattice.db"
+  # How many days to keep check history
+  retentionDays: 90
+
+# Monitors to check
+monitors:
+  # HTTP/HTTPS health checks
+  - name: "Production API"
+    url: "https://api.example.com/health"
+    type: "https"
+    interval: "60s"       # Check every 60 seconds
+    timeout: "10s"        # Timeout after 10 seconds
+    expectedStatus: 200   # Expected HTTP status code
+    group: "Production"   # Optional grouping
+    enabled: true
+
+  - name: "Staging API"
+    url: "https://staging-api.example.com/health"
+    type: "https"
+    interval: "120s"
+    timeout: "15s"
+    expectedStatus: 200
+    group: "Staging"
+    enabled: true
+
+  # TCP port check
+  - name: "Database"
+    url: "db.example.com:5432"
+    type: "tcp"
+    interval: "30s"
+    timeout: "5s"
+    group: "Infrastructure"
+    enabled: true
+
+  # DNS resolution check
+  - name: "DNS"
+    url: "example.com"
+    type: "dns"
+    interval: "60s"
+    timeout: "5s"
+    group: "Infrastructure"
+    enabled: true
+
+  # ICMP ping check
+  - name: "Gateway"
+    url: "192.168.1.1"
+    type: "icmp"
+    interval: "30s"
+    timeout: "5s"
+    group: "Network"
+    enabled: true
+
+# Notification channels
+notifications:
+  # Slack webhook
+  - name: "Slack Alerts"
+    type: "slack"
+    enabled: true
+    config:
+      # Get webhook URL from: https://api.slack.com/apps → Incoming Webhooks
+      webhook_url: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+
+  # Discord webhook
+  - name: "Discord Alerts"
+    type: "discord"
+    enabled: true
+    config:
+      # Get webhook URL from: Server Settings → Integrations → Webhooks
+      webhook_url: "https://discord.com/api/webhooks/000000000000000000/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+  # Email via SMTP
+  - name: "Email Alerts"
+    type: "email"
+    enabled: true
+    config:
+      smtp_host: "smtp.gmail.com"
+      smtp_port: "587"
+      smtp_user: "alerts@example.com"
+      smtp_pass: "your-app-password"
+      smtp_from: "Lattice Status <alerts@example.com>"
+      # Comma-separated list of recipients
+      to: "admin@example.com, ops@example.com"
+
+  # Generic webhook with HMAC signature
+  - name: "Custom Webhook"
+    type: "webhook"
+    enabled: true
+    config:
+      url: "https://your-server.com/webhooks/status"
+      # Optional: HMAC-SHA256 secret for signature verification
+      # Signature sent in X-Lattice-Signature header as "sha256=<hex>"
+      secret: "your-webhook-secret"
+
+  # ntfy push notifications
+  - name: "ntfy Alerts"
+    type: "ntfy"
+    enabled: true
+    config:
+      # Topic URL (can be self-hosted or ntfy.sh)
+      url: "https://ntfy.sh/my-lattice-alerts"
+      # Optional: Bearer token for authentication
+      token: "tk_xxxxxxxxxxxxxxxxxxxxxxx"

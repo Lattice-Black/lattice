@@ -13,6 +13,7 @@ import (
 
 	"github.com/Lattice-Black/lattice/internal/api"
 	"github.com/Lattice-Black/lattice/internal/config"
+	"github.com/Lattice-Black/lattice/internal/notify"
 	"github.com/Lattice-Black/lattice/internal/scheduler"
 	"github.com/Lattice-Black/lattice/internal/store"
 )
@@ -43,8 +44,16 @@ func main() {
 	log.Printf("Loaded state: %d monitors, %d incidents, %d notification channels",
 		len(state.Monitors), len(state.Incidents), len(state.NotificationChannels))
 
-	// Create scheduler
-	sched := scheduler.New(st, state, nil)
+	// Create notification registry
+	notifyRegistry := notify.NewRegistry(state)
+	notifyRegistry.Register(notify.NewSlackDispatcher())
+	notifyRegistry.Register(notify.NewDiscordDispatcher())
+	notifyRegistry.Register(notify.NewEmailDispatcher())
+	notifyRegistry.Register(notify.NewWebhookDispatcher())
+	notifyRegistry.Register(notify.NewNtfyDispatcher())
+
+	// Create scheduler with notification handler
+	sched := scheduler.New(st, state, notifyRegistry)
 
 	// Create API server
 	server := api.NewServer(st, sched, cfg)

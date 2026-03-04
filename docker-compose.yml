@@ -1,0 +1,11 @@
+services:
+  lattice:
+    image: ghcr.io/lattice-black/lattice:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+      - ./lattice.yaml:/lattice.yaml:ro
+    environment:
+      - LATTICE_API_KEY=changeme
+    restart: unless-stopped
