@@ -32,6 +32,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Remove stale embedded frontend artifacts (gitignored but may exist locally)
+RUN rm -rf internal/web/site internal/web/app
+
 # Copy frontend builds into internal/web for embedding
 COPY --from=site-builder /web/site/dist internal/web/site/
 COPY --from=app-builder /web/app/dist internal/web/app/
