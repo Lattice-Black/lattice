@@ -58,9 +58,6 @@ WORKDIR /app
 # Copy binary from builder
 COPY --from=go-builder /build/lattice .
 
-# Copy migrations if needed
-COPY --from=go-builder /build/migrations ./migrations
-
 # Set ownership
 RUN chown -R lattice:lattice /app
 
