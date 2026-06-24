@@ -1,0 +1,191 @@
+# Staging control plane deployment for lattice
+# Uses Stripe TEST mode keys — safe for testing with test cards (4242 4242 4242 4242)
+# Completely isolated from production (separate namespace, DB, ingress, secrets)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: staging-lattice
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: staging-hosted-data
+  namespace: staging-lattice
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lattice-staging-hosted
+  namespace: staging-lattice
+  labels:
+    app: lattice-staging-hosted
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lattice-staging-hosted
+  template:
+    metadata:
+      labels:
+        app: lattice-staging-hosted
+    spec:
+      serviceAccountName: lattice-staging-hosted
+      containers:
+      - name: hosted
+        image: localhost:30500/lattice-hosted:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8090
+          name: http
+          protocol: TCP
+        env:
+        - name: HOSTED_LISTEN_ADDR
+          value: ":8090"
+        - name: HOSTED_NAMESPACE
+          value: "staging-lattice"
+        - name: HOSTED_TENANT_IMAGE
+          value: "ghcr.io/lattice-black/lattice:latest"
+        - name: HOSTED_CLUSTER_ISSUER
+          value: "letsencrypt-dns01"
+        - name: HOSTED_ADMIN_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: lattice-staging-secrets
+              key: admin-api-key
+        - name: HOSTED_DB_PATH
+          value: "/data/hosted.db"
+        - name: HOSTED_FRONTEND_DIR
+          value: "/app/web/hosted"
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: lattice-staging-secrets
+              key: stripe-secret-key
+              optional: true
+        - name: STRIPE_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: lattice-staging-secrets
+              key: stripe-webhook-secret
+              optional: true
+        - name: STRIPE_PRICE_ID
+          valueFrom:
+            secretKeyRef:
+              name: lattice-staging-secrets
+              key: stripe-price-id
+              optional: true
+        - name: STRIPE_SUCCESS_URL
+          value: "https://cloud.lattice.black/success.html"
+        - name: STRIPE_CANCEL_URL
+          value: "https://cloud.lattice.black/"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          httpGet:
+            path: /api/hosted/signup
+            port: 8090
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/hosted/signup
+            port: 8090
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: staging-hosted-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lattice-staging-hosted
+  namespace: staging-lattice
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8090
+    protocol: TCP
+    name: http
+  selector:
+    app: lattice-staging-hosted
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lattice-staging-hosted
+  namespace: staging-lattice
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dns01
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - cloud.lattice.black
+    secretName: lattice-staging-hosted-tls
+  rules:
+  - host: cloud.lattice.black
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: lattice-staging-hosted
+            port:
+              number: 80
+---
+# ServiceAccount with RBAC to manage tenant resources in the staging-lattice namespace
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lattice-staging-hosted
+  namespace: staging-lattice
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: lattice-staging-hosted-manager
+  namespace: staging-lattice
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "scale"]
+- apiGroups: [""]
+  resources: ["services", "persistentvolumeclaims", "pods"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: lattice-staging-hosted-manager
+  namespace: staging-lattice
+subjects:
+- kind: ServiceAccount
+  name: lattice-staging-hosted
+  namespace: staging-lattice
+roleRef:
+  kind: Role
+  name: lattice-staging-hosted-manager
+  apiGroup: rbac.authorization.k8s.io

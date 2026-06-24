@@ -1,0 +1,50 @@
+# Dockerfile for the hosted control plane
+# Builds the hosted binary and serves the signup page
+
+FROM golang:1.22-bookworm AS go-builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libc6-dev && rm -rf /var/lib/apt/lists/*
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Create placeholder for embed (hosted doesn't need frontends, but Go compiles all packages)
+RUN mkdir -p internal/web/site internal/web/app && \
+    echo '<!DOCTYPE html><html><body></body></html>' > internal/web/site/index.html && \
+    echo '<!DOCTYPE html><html><body></body></html>' > internal/web/app/index.html
+
+RUN CGO_ENABLED=1 go build -ldflags="-s -w" -o hosted ./cmd/hosted
+
+# Stage 2: Runtime
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl && rm -rf /var/lib/apt/lists/*
+
+# Install kubectl
+RUN curl -fsSL "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/kubectl
+
+RUN useradd -r -u 1000 -s /bin/false lattice
+RUN mkdir -p /data /app/web
+RUN chown lattice:lattice /data /app
+
+WORKDIR /app
+
+COPY --from=go-builder /build/hosted .
+COPY web/hosted/ ./web/hosted/
+
+RUN chown -R lattice:lattice /app
+
+USER lattice
+
+EXPOSE 8090
+
+VOLUME ["/data"]
+
+CMD ["./hosted"]

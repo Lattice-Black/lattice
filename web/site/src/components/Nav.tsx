@@ -46,13 +46,21 @@ export default function Nav() {
           </a>
         </nav>
 
-        {/* CTA */}
-        <a
-          href="#get-started"
-          className="text-sm text-accent border border-accent px-4 py-2 hover:bg-accent hover:text-background transition-colors"
-        >
-          Deploy
-        </a>
+        {/* CTAs */}
+        <div className="flex items-center gap-3">
+          <a
+            href="#get-started"
+            className="hidden sm:inline text-sm text-text-secondary hover:text-text-primary transition-colors"
+          >
+            Self-Host
+          </a>
+          <a
+            href="https://hosted.lattice.black"
+            className="text-sm text-accent border border-accent px-4 py-2 hover:bg-accent hover:text-background transition-colors"
+          >
+            Start Free Trial
+          </a>
+        </div>
       </div>
     </header>
   )

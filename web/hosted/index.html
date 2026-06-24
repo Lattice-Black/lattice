@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lattice — Start Your Free Trial</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Inter', -apple-system, sans-serif;
+        background: #0a0a0a; color: #f0f0f0; min-height: 100vh;
+        display: flex; align-items: center; justify-content: center; padding: 1rem;
+      }
+      .container { max-width: 480px; width: 100%; }
+      .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 32px; justify-content: center; }
+      .logo-box { width: 28px; height: 28px; border: 1px solid #4d9f5d; display: flex; align-items: center; justify-content: center; }
+      .logo-box span { color: #4d9f5d; font-weight: bold; font-size: 14px; }
+      .logo-text { font-size: 18px; font-weight: 600; }
+      h1 { font-size: 28px; margin-bottom: 8px; font-weight: 700; }
+      .subtitle { color: #a0a0a0; margin-bottom: 32px; }
+      .card { border: 1px solid #1e1e1e; background: #111; padding: 32px; }
+      .form-group { margin-bottom: 20px; }
+      label { display: block; color: #6b6b6b; font-size: 14px; margin-bottom: 6px; font-weight: 500; }
+      input {
+        width: 100%; padding: 10px 12px; background: #0a0a0a; border: 1px solid #1e1e1e;
+        color: #f0f0f0; font-size: 14px; outline: none; transition: border-color 0.2s;
+      }
+      input:focus { border-color: #4d9f5d; }
+      .slug-wrapper { display: flex; align-items: stretch; }
+      .slug-wrapper input { border-right: none; }
+      .slug-suffix { padding: 10px 12px; background: #1e1e1e; border: 1px solid #1e1e1e; color: #6b6b6b; font-size: 14px; white-space: nowrap; }
+      .btn {
+        width: 100%; padding: 12px; background: #4d9f5d; color: #0a0a0a; border: none;
+        font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+      }
+      .btn:hover { opacity: 0.9; }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      .price { text-align: center; margin: 20px 0; color: #6b6b6b; font-size: 14px; }
+      .price strong { color: #f0f0f0; }
+      .error { color: #ef4444; font-size: 13px; margin-top: 6px; display: none; }
+      .error.show { display: block; }
+      .success { text-align: center; }
+      .success .url { color: #4d9f5d; font-size: 16px; margin: 12px 0; font-family: monospace; }
+      .success .key { color: #a0a0a0; font-size: 13px; word-break: break-all; font-family: monospace; background: #0a0a0a; padding: 8px; border: 1px solid #1e1e1e; margin: 8px 0; }
+      .check { color: #22c55e; font-size: 48px; margin-bottom: 16px; }
+      .trial-badge { display: inline-block; background: rgba(77,159,93,0.1); border: 1px solid rgba(77,159,93,0.3); color: #4d9f5d; padding: 2px 10px; font-size: 12px; margin-left: 8px; }
+      .redirect-note { color: #6b6b6b; font-size: 13px; margin-top: 16px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">
+        <div class="logo-box"><span>L</span></div>
+        <span class="logo-text">Lattice</span>
+      </div>
+
+      <div id="signup-form">
+        <h1>Start your free trial <span class="trial-badge">14 days free</span></h1>
+        <p class="subtitle">$25/year after trial. No credit card required to start.</p>
+
+        <div class="card">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="you@company.com" required />
+            <div class="error" id="email-error"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="slug">Choose your subdomain</label>
+            <div class="slug-wrapper">
+              <input type="text" id="slug" placeholder="acme" required style="flex:1" />
+              <span class="slug-suffix">.lattice.black</span>
+            </div>
+            <div class="error" id="slug-error"></div>
+          </div>
+
+          <div class="price"><strong>$25/year</strong> — unlimited monitors, unlimited status pages</div>
+
+          <button class="btn" id="submit-btn" onclick="submitSignup()">Create Account</button>
+        </div>
+      </div>
+
+      <div id="success-view" style="display:none">
+        <div class="success">
+          <div class="check">✓</div>
+          <h1>You're all set!</h1>
+          <p class="subtitle">Your status page is being provisioned. It'll be live in about a minute.</p>
+          <p>Your status page:</p>
+          <div class="url" id="tenant-url"></div>
+          <p>Your API key (save this!):</p>
+          <div class="key" id="api-key"></div>
+          <p class="redirect-note">Redirecting to your dashboard...</p>
+        </div>
+      </div>
+
+      <div id="stripe-redirect" style="display:none">
+        <div class="success">
+          <h1>Almost there!</h1>
+          <p class="subtitle">Complete your payment to activate your status page.</p>
+          <p class="redirect-note">Redirecting to Stripe...</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Slug validation
+      const slugInput = document.getElementById('slug');
+      let slugCheckTimer = null;
+
+      slugInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        clearTimeout(slugCheckTimer);
+        const slug = e.target.value;
+        if (slug.length >= 3) {
+          slugCheckTimer = setTimeout(() => checkSlug(slug), 400);
+        }
+      });
+
+      async function checkSlug(slug) {
+        try {
+          const res = await fetch('/api/hosted/check-slug/' + slug);
+          const data = await res.json();
+          const err = document.getElementById('slug-error');
+          if (!data.available) {
+            err.textContent = data.reason || 'That subdomain is taken';
+            err.classList.add('show');
+          } else {
+            err.classList.remove('show');
+          }
+        } catch {}
+      }
+
+      async function submitSignup() {
+        const email = document.getElementById('email').value;
+        const slug = document.getElementById('slug').value;
+        const btn = document.getElementById('submit-btn');
+
+        // Clear errors
+        document.getElementById('email-error').classList.remove('show');
+        document.getElementById('slug-error').classList.remove('show');
+
+        if (!email || !email.includes('@')) {
+          const err = document.getElementById('email-error');
+          err.textContent = 'Please enter a valid email';
+          err.classList.add('show');
+          return;
+        }
+        if (!slug || slug.length < 3) {
+          const err = document.getElementById('slug-error');
+          err.textContent = 'Subdomain must be at least 3 characters';
+          err.classList.add('show');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+
+        try {
+          const res = await fetch('/api/hosted/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, slug }),
+          });
+          const data = await res.json();
+
+          if (!res.ok) {
+            btn.disabled = false;
+            btn.textContent = 'Create Account';
+            const errEl = data.error.includes('slug') || data.error.includes('subdomain')
+              ? document.getElementById('slug-error')
+              : document.getElementById('email-error');
+            errEl.textContent = data.error;
+            errEl.classList.add('show');
+            return;
+          }
+
+          // If Stripe checkout URL, redirect
+          if (data.checkout_url) {
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('stripe-redirect').style.display = 'block';
+            setTimeout(() => { window.location.href = data.checkout_url; }, 1500);
+            return;
+          }
+
+          // Direct signup (no Stripe)
+          document.getElementById('signup-form').style.display = 'none';
+          document.getElementById('success-view').style.display = 'block';
+          document.getElementById('tenant-url').textContent = data.tenant_url;
+          document.getElementById('api-key').textContent = data.api_key;
+
+          // Redirect to dashboard after 5 seconds
+          setTimeout(() => {
+            window.location.href = data.dashboard_url;
+          }, 5000);
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Create Account';
+          alert('Something went wrong. Please try again.');
+        }
+      }
+    </script>
+  </body>
+</html>

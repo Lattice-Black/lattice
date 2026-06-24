@@ -1,5 +1,6 @@
 # Go
 /lattice
+/hosted
 *.exe
 *.test
 *.out
@@ -28,3 +29,9 @@ Thumbs.db
 # Data
 *.db
 *.db-journal
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lattice — Payment Successful</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0a0a0a; color: #f0f0f0; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .container { max-width: 480px; width: 100%; text-align: center; }
+    .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 32px; justify-content: center; }
+    .logo-box { width: 28px; height: 28px; border: 1px solid #4d9f5d; display: flex; align-items: center; justify-content: center; }
+    .logo-box span { color: #4d9f5d; font-weight: bold; font-size: 14px; }
+    .logo-text { font-size: 18px; font-weight: 600; }
+    .check { color: #4d9f5d; font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 28px; margin-bottom: 8px; font-weight: 700; }
+    .subtitle { color: #a0a0a0; margin-bottom: 24px; }
+    .card { border: 1px solid #1e1e1e; background: #111; padding: 24px; margin-bottom: 16px; }
+    .tenant-url { color: #4d9f5d; font-size: 16px; font-family: monospace; margin: 8px 0; }
+    .btn { display: inline-block; padding: 12px 24px; background: #4d9f5d; color: #0a0a0a; text-decoration: none; font-size: 15px; font-weight: 600; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-box"><span>L</span></div>
+      <span class="logo-text">Lattice</span>
+    </div>
+    <div class="check">✓</div>
+    <h1>Payment successful!</h1>
+    <p class="subtitle">Your subscription is active. Your status page is being provisioned.</p>
+    <div class="card">
+      <p style="color:#6b6b6b;font-size:14px;margin-bottom:8px">Your status page:</p>
+      <div class="tenant-url" id="tenant-url">Loading...</div>
+    </div>
+    <a class="btn" id="dashboard-link" href="/">Go to Dashboard</a>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const tenant = params.get('tenant');
+    if (tenant) {
+      document.getElementById('tenant-url').textContent = 'Tenant ID: ' + tenant;
+    } else {
+      document.getElementById('tenant-url').textContent = 'Account activated successfully!';
+    }
+  </script>
+</body>
+</html>

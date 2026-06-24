@@ -33,8 +33,8 @@ const plans: Plan[] = [
   },
   {
     name: 'Hosted',
-    price: '$9',
-    period: '/mo',
+    price: '$25',
+    period: '/year',
     description: 'We run Lattice for you. Zero maintenance, instant setup.',
     features: [
       { text: 'Unlimited monitors', included: true },
@@ -46,7 +46,7 @@ const plans: Plan[] = [
       { text: 'Priority support', included: true },
     ],
     cta: 'Start Free Trial',
-    ctaLink: 'https://github.com/lattice-black/lattice#getting-started',
+    ctaLink: 'https://hosted.lattice.black',
     highlighted: true,
   },
 ]

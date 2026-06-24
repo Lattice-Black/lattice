@@ -22,12 +22,12 @@ export default function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <a href="#get-started" className="btn-primary text-center">
-                Get Started
+              <a href="https://hosted.lattice.black" className="btn-primary text-center">
+                Start Free Trial
                 <span className="ml-2">&rarr;</span>
               </a>
-              <a href="https://github.com/lattice-black/lattice" target="_blank" rel="noopener noreferrer" className="btn-ghost text-center">
-                View on GitHub
+              <a href="#get-started" className="btn-ghost text-center">
+                Self-Host
               </a>
             </div>
           </div>
