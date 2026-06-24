@@ -4,7 +4,7 @@ export interface Monitor {
   id: string
   name: string
   url: string
-  type: 'http' | 'tcp' | 'ping' | 'dns'
+  type: 'http' | 'https' | 'tcp' | 'dns' | 'icmp'
   interval: number
   timeout: number
   expected_status?: number
@@ -20,7 +20,7 @@ export interface Monitor {
 export interface CreateMonitorInput {
   name: string
   url: string
-  type: 'http' | 'tcp' | 'ping' | 'dns'
+  type: 'http' | 'https' | 'tcp' | 'dns' | 'icmp'
   interval: number
   timeout: number
   expected_status?: number
@@ -51,7 +51,7 @@ export const monitorsApi = {
   delete: (id: string) => api.delete<void>(`/api/monitors/${id}`),
 
   toggle: (id: string, enabled: boolean) =>
-    api.patch<Monitor>(`/api/monitors/${id}`, { enabled }),
+    api.put<Monitor>(`/api/monitors/${id}`, { enabled }),
 
   history: (id: string, days: number = 90) =>
     api.get<MonitorHistory[]>(`/api/monitors/${id}/history?days=${days}`),

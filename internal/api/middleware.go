@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -9,9 +10,16 @@ import (
 
 // APIKeyAuth returns middleware that validates the API key from X-API-Key header
 // or Authorization: Bearer token.
+// If apiKey is empty, all requests are rejected (admin routes are locked).
 func APIKeyAuth(apiKey string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// If no API key is configured, reject all requests
+			if apiKey == "" {
+				Unauthorized(w)
+				return
+			}
+
 			// Check X-API-Key header first
 			key := r.Header.Get("X-API-Key")
 
@@ -32,6 +40,17 @@ func APIKeyAuth(apiKey string) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// MaxBodySize limits the size of request bodies to prevent memory exhaustion.
+const MaxBodySize = 1 << 20 // 1 MB
+
+// LimitBody returns middleware that limits request body size.
+func LimitBody(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, MaxBodySize)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // responseWriter wraps http.ResponseWriter to capture the status code.
@@ -83,7 +102,7 @@ func CORS(origins []string) func(http.Handler) http.Handler {
 				w.Header().Set("Vary", "Origin")
 			}
 
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-API-Key")
 			w.Header().Set("Access-Control-Max-Age", "86400")
 
@@ -96,4 +115,10 @@ func CORS(origins []string) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// CloseRead is a helper to drain and close the body for safety.
+func CloseRead(body io.ReadCloser) {
+	io.Copy(io.Discard, body)
+	body.Close()
 }

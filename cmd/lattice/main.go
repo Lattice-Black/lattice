@@ -28,6 +28,11 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	if cfg.Server.APIKey == "" {
+		log.Println("WARNING: No API key set. Admin routes will be inaccessible.")
+		log.Println("Set LATTICE_API_KEY env var or server.apiKey in config file.")
+	}
+
 	// Open store
 	st, err := store.New(cfg.Database.Path)
 	if err != nil {
@@ -54,6 +59,14 @@ func main() {
 
 	// Create scheduler with notification handler
 	sched := scheduler.New(st, state, notifyRegistry)
+	sched.SetRetentionDays(cfg.Database.RetentionDays)
+
+	// Seed monitors and notifications from config that aren't already in the DB
+	if len(cfg.Monitors) > 0 || len(cfg.Notifications) > 0 {
+		if err := sched.SeedFromConfig(cfg); err != nil {
+			log.Printf("Warning: failed to seed from config: %v", err)
+		}
+	}
 
 	// Create API server
 	server := api.NewServer(st, sched, cfg)
@@ -117,16 +130,11 @@ func loadConfig(path string) (*config.Config, error) {
 		return config.Load("lattice.yaml")
 	}
 
-	// Return default config
-	return &config.Config{
-		Server: config.ServerConfig{
-			Port:        8080,
-			Host:        "0.0.0.0",
-			CORSOrigins: []string{"*"},
-		},
-		Database: config.DatabaseConfig{
-			Path:          "./lattice.db",
-			RetentionDays: 90,
-		},
-	}, nil
+	// Try /lattice.yaml (Docker convention)
+	if _, err := os.Stat("/lattice.yaml"); err == nil {
+		return config.Load("/lattice.yaml")
+	}
+
+	// Return default config (with env var overlay)
+	return config.DefaultConfig(), nil
 }

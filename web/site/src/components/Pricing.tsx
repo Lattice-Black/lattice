@@ -46,7 +46,7 @@ const plans: Plan[] = [
       { text: 'Priority support', included: true },
     ],
     cta: 'Start Free Trial',
-    ctaLink: '#',
+    ctaLink: 'https://github.com/lattice-black/lattice#getting-started',
     highlighted: true,
   },
 ]

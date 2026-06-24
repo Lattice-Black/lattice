@@ -16,7 +16,7 @@ const typeOptions = [
   { value: 'email', label: 'Email' },
   { value: 'slack', label: 'Slack' },
   { value: 'webhook', label: 'Webhook' },
-  { value: 'pagerduty', label: 'PagerDuty' },
+  { value: 'ntfy', label: 'ntfy' },
   { value: 'discord', label: 'Discord' },
 ]
 
@@ -24,7 +24,7 @@ const typeIcons: Record<NotificationType, string> = {
   email: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
   slack: 'M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z M9.5 10H6.5C5.67 10 5 10.67 5 11.5S5.67 13 6.5 13H9.5C10.33 13 11 12.33 11 11.5S10.33 10 9.5 10z',
   webhook: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
-  pagerduty: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  ntfy: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
   discord: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
 }
 
@@ -96,15 +96,23 @@ function NotificationForm({ notification, onSubmit, onCancel, isLoading }: Notif
             />
           </>
         )
-      case 'pagerduty':
+      case 'ntfy':
         return (
-          <Input
-            label="Integration Key"
-            value={config.integration_key || ''}
-            onChange={(e) => setConfig({ ...config, integration_key: e.target.value })}
-            placeholder="Your PagerDuty integration key"
-            required
-          />
+          <>
+            <Input
+              label="ntfy URL"
+              value={config.url || ''}
+              onChange={(e) => setConfig({ ...config, url: e.target.value })}
+              placeholder="https://ntfy.sh/my-topic"
+              required
+            />
+            <Input
+              label="Access Token (optional)"
+              value={config.token || ''}
+              onChange={(e) => setConfig({ ...config, token: e.target.value })}
+              placeholder="tk_xxxxxxxxxxxxxxxxxxxxxxx"
+            />
+          </>
         )
       default:
         return null

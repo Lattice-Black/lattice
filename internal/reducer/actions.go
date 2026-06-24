@@ -27,6 +27,7 @@ type UpdateMonitor struct {
 	ID             string
 	Name           *string
 	URL            *string
+	Type           *MonitorType
 	Interval       *time.Duration
 	Timeout        *time.Duration
 	ExpectedStatus *int
@@ -65,6 +66,7 @@ type CreateIncident struct {
 	Title       string
 	Severity    Severity
 	AutoCreated bool
+	Message     string // initial update message
 	Now         time.Time
 }
 
@@ -87,6 +89,12 @@ type ResolveIncident struct {
 
 func (a ResolveIncident) ActionType() string { return "RESOLVE_INCIDENT" }
 
+type DeleteIncident struct {
+	ID string
+}
+
+func (a DeleteIncident) ActionType() string { return "DELETE_INCIDENT" }
+
 // --- Notification Actions ---
 
 type CreateNotificationChannel struct {
@@ -94,9 +102,20 @@ type CreateNotificationChannel struct {
 	Type    NotificationChannelType
 	Name    string
 	Config  map[string]string
+	Now     time.Time
 }
 
 func (a CreateNotificationChannel) ActionType() string { return "CREATE_NOTIFICATION_CHANNEL" }
+
+type UpdateNotificationChannel struct {
+	ID      string
+	Name    *string
+	Config  map[string]string
+	Enabled *bool
+	Now     time.Time
+}
+
+func (a UpdateNotificationChannel) ActionType() string { return "UPDATE_NOTIFICATION_CHANNEL" }
 
 type DeleteNotificationChannel struct {
 	ID string
@@ -107,11 +126,13 @@ func (a DeleteNotificationChannel) ActionType() string { return "DELETE_NOTIFICA
 // --- Maintenance Actions ---
 
 type CreateMaintenanceWindow struct {
-	ID        string
-	MonitorID string
-	Title     string
-	StartsAt  time.Time
-	EndsAt    time.Time
+	ID          string
+	MonitorID   string
+	Title       string
+	Description string
+	StartsAt    time.Time
+	EndsAt      time.Time
+	Now         time.Time
 }
 
 func (a CreateMaintenanceWindow) ActionType() string { return "CREATE_MAINTENANCE_WINDOW" }
@@ -125,10 +146,10 @@ func (a DeleteMaintenanceWindow) ActionType() string { return "DELETE_MAINTENANC
 // --- Settings Actions ---
 
 type UpdateSettings struct {
-	SiteName    *string
-	LogoURL     *string
-	AccentColor *string
-	CustomCSS   *string
+	SiteName     *string
+	LogoURL      *string
+	AccentColor  *string
+	CustomCSS    *string
 	CustomDomain *string
 }
 

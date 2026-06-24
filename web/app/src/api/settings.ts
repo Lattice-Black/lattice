@@ -5,6 +5,7 @@ export interface Settings {
   logo_url?: string
   accent_color?: string
   custom_css?: string
+  custom_domain?: string
 }
 
 export const settingsApi = {

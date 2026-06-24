@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/Lattice-Black/lattice/internal/reducer"
@@ -24,10 +25,12 @@ type Store interface {
 	GetChecks(monitorID string, since time.Time) ([]reducer.Check, error)
 	GetLatestCheck(monitorID string) (*reducer.Check, error)
 	PruneChecks(before time.Time) (int64, error)
+	GetDailyHistory(monitorID string, days int) ([]DailyHistory, error)
 
 	// Incidents
 	CreateIncident(i reducer.Incident) error
 	UpdateIncident(i reducer.Incident) error
+	DeleteIncident(id string) error
 	GetIncident(id string) (*reducer.Incident, error)
 	ListIncidents(includeResolved bool) ([]reducer.Incident, error)
 	CreateIncidentUpdate(u reducer.IncidentUpdate) error
@@ -35,7 +38,9 @@ type Store interface {
 
 	// Notification Channels
 	CreateNotificationChannel(ch reducer.NotificationChannel) error
+	UpdateNotificationChannel(ch reducer.NotificationChannel) error
 	DeleteNotificationChannel(id string) error
+	GetNotificationChannel(id string) (*reducer.NotificationChannel, error)
 	ListNotificationChannels() ([]reducer.NotificationChannel, error)
 
 	// Maintenance Windows
@@ -49,8 +54,16 @@ type Store interface {
 
 	// State
 	LoadState() (*reducer.State, error)
+	RecalculateConsecutiveFailures(state *reducer.State) error
 
 	Close() error
+}
+
+// DailyHistory represents a single day's aggregated check history.
+type DailyHistory struct {
+	Date          string  `json:"date"`
+	Status        string  `json:"status"`
+	UptimePercent float64 `json:"uptime_percent"`
 }
 
 // SQLiteStore implements Store using SQLite.
@@ -173,8 +186,8 @@ func scanMonitor(row *sql.Row) (*reducer.Monitor, error) {
 	m.Interval = time.Duration(intervalNs)
 	m.Timeout = time.Duration(timeoutNs)
 	m.Enabled = enabled != 0
-	m.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
-	m.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+	m.CreatedAt = parseTime(createdAt)
+	m.UpdatedAt = parseTime(updatedAt)
 
 	return &m, nil
 }
@@ -195,8 +208,8 @@ func scanMonitorRow(rows *sql.Rows) (*reducer.Monitor, error) {
 	m.Interval = time.Duration(intervalNs)
 	m.Timeout = time.Duration(timeoutNs)
 	m.Enabled = enabled != 0
-	m.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
-	m.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+	m.CreatedAt = parseTime(createdAt)
+	m.UpdatedAt = parseTime(updatedAt)
 
 	return &m, nil
 }
@@ -253,7 +266,7 @@ func (s *SQLiteStore) GetLatestCheck(monitorID string) (*reducer.Check, error) {
 	}
 
 	c.Status = reducer.Status(status)
-	c.CheckedAt, _ = time.Parse(time.RFC3339, checkedAt)
+	c.CheckedAt = parseTime(checkedAt)
 
 	return &c, nil
 }
@@ -266,6 +279,39 @@ func (s *SQLiteStore) PruneChecks(before time.Time) (int64, error) {
 	return result.RowsAffected()
 }
 
+// GetDailyHistory returns aggregated daily check history for a monitor.
+func (s *SQLiteStore) GetDailyHistory(monitorID string, days int) ([]DailyHistory, error) {
+	since := time.Now().AddDate(0, 0, -days)
+	rows, err := s.db.Query(`
+		SELECT
+			DATE(checked_at) as date,
+			CASE
+				WHEN SUM(CASE WHEN status = 'down' THEN 1 ELSE 0 END) > 0 THEN 'down'
+				WHEN SUM(CASE WHEN status = 'degraded' THEN 1 ELSE 0 END) > 0 THEN 'degraded'
+				ELSE 'up'
+			END as status,
+			(CAST(SUM(CASE WHEN status = 'up' THEN 1.0 ELSE 0 END) AS REAL) / COUNT(*)) * 100 as uptime_percent
+		FROM checks
+		WHERE monitor_id = ? AND checked_at >= ?
+		GROUP BY DATE(checked_at)
+		ORDER BY date
+	`, monitorID, since.Format(time.RFC3339))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get daily history: %w", err)
+	}
+	defer rows.Close()
+
+	var history []DailyHistory
+	for rows.Next() {
+		var h DailyHistory
+		if err := rows.Scan(&h.Date, &h.Status, &h.UptimePercent); err != nil {
+			return nil, fmt.Errorf("failed to scan daily history: %w", err)
+		}
+		history = append(history, h)
+	}
+	return history, rows.Err()
+}
+
 func scanCheckRow(rows *sql.Rows) (*reducer.Check, error) {
 	var c reducer.Check
 	var status, checkedAt string
@@ -276,7 +322,7 @@ func scanCheckRow(rows *sql.Rows) (*reducer.Check, error) {
 	}
 
 	c.Status = reducer.Status(status)
-	c.CheckedAt, _ = time.Parse(time.RFC3339, checkedAt)
+	c.CheckedAt = parseTime(checkedAt)
 
 	return &c, nil
 }
@@ -317,6 +363,18 @@ func (s *SQLiteStore) UpdateIncident(i reducer.Incident) error {
 	rows, _ := result.RowsAffected()
 	if rows == 0 {
 		return fmt.Errorf("incident not found: %s", i.ID)
+	}
+	return nil
+}
+
+func (s *SQLiteStore) DeleteIncident(id string) error {
+	result, err := s.db.Exec("DELETE FROM incidents WHERE id = ?", id)
+	if err != nil {
+		return fmt.Errorf("failed to delete incident: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("incident not found: %s", id)
 	}
 	return nil
 }
@@ -371,10 +429,10 @@ func scanIncident(row *sql.Row) (*reducer.Incident, error) {
 	i.Severity = reducer.Severity(severity)
 	i.Status = reducer.IncidentStatus(status)
 	i.AutoCreated = autoCreated != 0
-	i.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
-	i.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+	i.CreatedAt = parseTime(createdAt)
+	i.UpdatedAt = parseTime(updatedAt)
 	if resolvedAt.Valid {
-		t, _ := time.Parse(time.RFC3339, resolvedAt.String)
+		t := parseTime(resolvedAt.String)
 		i.ResolvedAt = &t
 	}
 
@@ -395,10 +453,10 @@ func scanIncidentRow(rows *sql.Rows) (*reducer.Incident, error) {
 	i.Severity = reducer.Severity(severity)
 	i.Status = reducer.IncidentStatus(status)
 	i.AutoCreated = autoCreated != 0
-	i.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
-	i.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+	i.CreatedAt = parseTime(createdAt)
+	i.UpdatedAt = parseTime(updatedAt)
 	if resolvedAt.Valid {
-		t, _ := time.Parse(time.RFC3339, resolvedAt.String)
+		t := parseTime(resolvedAt.String)
 		i.ResolvedAt = &t
 	}
 
@@ -439,7 +497,7 @@ func (s *SQLiteStore) GetIncidentUpdates(incidentID string) ([]reducer.IncidentU
 		}
 
 		u.Status = reducer.IncidentStatus(status)
-		u.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
+		u.CreatedAt = parseTime(createdAt)
 		updates = append(updates, u)
 	}
 	return updates, rows.Err()
@@ -454,11 +512,31 @@ func (s *SQLiteStore) CreateNotificationChannel(ch reducer.NotificationChannel) 
 	}
 
 	_, err = s.db.Exec(`
-		INSERT INTO notification_channels (id, type, name, config, enabled)
-		VALUES (?, ?, ?, ?, ?)
-	`, ch.ID, string(ch.Type), ch.Name, string(configJSON), ch.Enabled)
+		INSERT INTO notification_channels (id, type, name, config, enabled, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, ch.ID, string(ch.Type), ch.Name, string(configJSON), ch.Enabled, ch.CreatedAt.Format(time.RFC3339), ch.UpdatedAt.Format(time.RFC3339))
 	if err != nil {
 		return fmt.Errorf("failed to create notification channel: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLiteStore) UpdateNotificationChannel(ch reducer.NotificationChannel) error {
+	configJSON, err := json.Marshal(ch.Config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	result, err := s.db.Exec(`
+		UPDATE notification_channels SET type = ?, name = ?, config = ?, enabled = ?, updated_at = ?
+		WHERE id = ?
+	`, string(ch.Type), ch.Name, string(configJSON), ch.Enabled, ch.UpdatedAt.Format(time.RFC3339), ch.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update notification channel: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("notification channel not found: %s", ch.ID)
 	}
 	return nil
 }
@@ -475,9 +553,39 @@ func (s *SQLiteStore) DeleteNotificationChannel(id string) error {
 	return nil
 }
 
+func (s *SQLiteStore) GetNotificationChannel(id string) (*reducer.NotificationChannel, error) {
+	row := s.db.QueryRow(`
+		SELECT id, type, name, config, enabled, created_at, updated_at
+		FROM notification_channels WHERE id = ?
+	`, id)
+
+	var ch reducer.NotificationChannel
+	var channelType, configJSON string
+	var enabled int
+	var createdAt, updatedAt string
+
+	err := row.Scan(&ch.ID, &channelType, &ch.Name, &configJSON, &enabled, &createdAt, &updatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan notification channel: %w", err)
+	}
+
+	ch.Type = reducer.NotificationChannelType(channelType)
+	ch.Enabled = enabled != 0
+	if err := json.Unmarshal([]byte(configJSON), &ch.Config); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+	ch.CreatedAt = parseTime(createdAt)
+	ch.UpdatedAt = parseTime(updatedAt)
+
+	return &ch, nil
+}
+
 func (s *SQLiteStore) ListNotificationChannels() ([]reducer.NotificationChannel, error) {
 	rows, err := s.db.Query(`
-		SELECT id, type, name, config, enabled
+		SELECT id, type, name, config, enabled, created_at, updated_at
 		FROM notification_channels ORDER BY name
 	`)
 	if err != nil {
@@ -490,8 +598,9 @@ func (s *SQLiteStore) ListNotificationChannels() ([]reducer.NotificationChannel,
 		var ch reducer.NotificationChannel
 		var channelType, configJSON string
 		var enabled int
+		var createdAt, updatedAt string
 
-		err := rows.Scan(&ch.ID, &channelType, &ch.Name, &configJSON, &enabled)
+		err := rows.Scan(&ch.ID, &channelType, &ch.Name, &configJSON, &enabled, &createdAt, &updatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan notification channel: %w", err)
 		}
@@ -501,6 +610,8 @@ func (s *SQLiteStore) ListNotificationChannels() ([]reducer.NotificationChannel,
 		if err := json.Unmarshal([]byte(configJSON), &ch.Config); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 		}
+		ch.CreatedAt = parseTime(createdAt)
+		ch.UpdatedAt = parseTime(updatedAt)
 		channels = append(channels, ch)
 	}
 	return channels, rows.Err()
@@ -510,9 +621,9 @@ func (s *SQLiteStore) ListNotificationChannels() ([]reducer.NotificationChannel,
 
 func (s *SQLiteStore) CreateMaintenanceWindow(mw reducer.MaintenanceWindow) error {
 	_, err := s.db.Exec(`
-		INSERT INTO maintenance_windows (id, monitor_id, title, starts_at, ends_at)
-		VALUES (?, ?, ?, ?, ?)
-	`, mw.ID, mw.MonitorID, mw.Title, mw.StartsAt.Format(time.RFC3339), mw.EndsAt.Format(time.RFC3339))
+		INSERT INTO maintenance_windows (id, monitor_id, title, description, starts_at, ends_at, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, mw.ID, mw.MonitorID, mw.Title, mw.Description, mw.StartsAt.Format(time.RFC3339), mw.EndsAt.Format(time.RFC3339), mw.CreatedAt.Format(time.RFC3339))
 	if err != nil {
 		return fmt.Errorf("failed to create maintenance window: %w", err)
 	}
@@ -533,7 +644,7 @@ func (s *SQLiteStore) DeleteMaintenanceWindow(id string) error {
 
 func (s *SQLiteStore) ListMaintenanceWindows() ([]reducer.MaintenanceWindow, error) {
 	rows, err := s.db.Query(`
-		SELECT id, monitor_id, title, starts_at, ends_at
+		SELECT id, monitor_id, title, description, starts_at, ends_at, created_at
 		FROM maintenance_windows ORDER BY starts_at
 	`)
 	if err != nil {
@@ -544,15 +655,16 @@ func (s *SQLiteStore) ListMaintenanceWindows() ([]reducer.MaintenanceWindow, err
 	var windows []reducer.MaintenanceWindow
 	for rows.Next() {
 		var mw reducer.MaintenanceWindow
-		var startsAt, endsAt string
+		var startsAt, endsAt, createdAt string
 
-		err := rows.Scan(&mw.ID, &mw.MonitorID, &mw.Title, &startsAt, &endsAt)
+		err := rows.Scan(&mw.ID, &mw.MonitorID, &mw.Title, &mw.Description, &startsAt, &endsAt, &createdAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan maintenance window: %w", err)
 		}
 
-		mw.StartsAt, _ = time.Parse(time.RFC3339, startsAt)
-		mw.EndsAt, _ = time.Parse(time.RFC3339, endsAt)
+		mw.StartsAt = parseTime(startsAt)
+		mw.EndsAt = parseTime(endsAt)
+		mw.CreatedAt = parseTime(createdAt)
 		windows = append(windows, mw)
 	}
 	return windows, rows.Err()
@@ -645,8 +757,47 @@ func (s *SQLiteStore) LoadState() (*reducer.State, error) {
 	}
 	state.Settings = *settings
 
-	// Note: ConsecutiveFailures is not persisted, it's calculated at runtime
-	// based on recent check history or reset on restart
+	// Recalculate consecutive failures from recent check history
+	if err := s.RecalculateConsecutiveFailures(&state); err != nil {
+		log.Printf("warning: failed to recalculate consecutive failures: %v", err)
+	}
 
 	return &state, nil
+}
+
+// RecalculateConsecutiveFailures looks at recent checks to rebuild the
+// consecutive failure counter for each monitor.
+func (s *SQLiteStore) RecalculateConsecutiveFailures(state *reducer.State) error {
+	for id, m := range state.Monitors {
+		if !m.Enabled {
+			continue
+		}
+		// Get the last N checks (where N = AutoIncidentThreshold) and count
+		// consecutive failures from the most recent
+		checks, err := s.GetChecks(id, time.Now().Add(-24*time.Hour))
+		if err != nil {
+			continue
+		}
+
+		failures := 0
+		for _, c := range checks { // checks are ordered DESC (newest first)
+			if c.Status == reducer.StatusDown || c.Status == reducer.StatusDegraded {
+				failures++
+			} else {
+				break // hit an "up" check, stop counting
+			}
+		}
+		state.ConsecutiveFailures[id] = failures
+	}
+	return nil
+}
+
+// parseTime parses an RFC3339 time string, logging a warning on error.
+func parseTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		log.Printf("warning: failed to parse time %q: %v", s, err)
+		return time.Time{}
+	}
+	return t
 }

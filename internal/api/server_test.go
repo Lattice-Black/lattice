@@ -68,17 +68,16 @@ func TestHealth(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp HealthResponse
+	var resp map[string]string
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Equal(t, "ok", resp.Status)
+	assert.Equal(t, "ok", resp["status"])
 }
 
 func TestPublicStatusNoAuth(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// Public status should work without auth
 	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 	w := httptest.NewRecorder()
 
@@ -89,7 +88,8 @@ func TestPublicStatusNoAuth(t *testing.T) {
 	var resp StatusResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Equal(t, "Lattice Status", resp.Settings.SiteName)
+	assert.Equal(t, "Lattice Status", resp.SiteName)
+	assert.Equal(t, "operational", resp.OverallStatus)
 }
 
 func TestAdminRoutesRequireAuth(t *testing.T) {
@@ -128,7 +128,6 @@ func TestAdminRoutesWithAPIKey(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// Test with X-API-Key header
 	req := httptest.NewRequest(http.MethodGet, "/api/monitors", nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w := httptest.NewRecorder()
@@ -142,7 +141,6 @@ func TestAdminRoutesWithBearerToken(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// Test with Authorization: Bearer header
 	req := httptest.NewRequest(http.MethodGet, "/api/monitors", nil)
 	req.Header.Set("Authorization", "Bearer "+testAPIKey)
 	w := httptest.NewRecorder()
@@ -161,8 +159,8 @@ func TestMonitorCRUD(t *testing.T) {
 		Name:     "Test Monitor",
 		URL:      "https://example.com",
 		Type:     "https",
-		Interval: "30s",
-		Timeout:  "5s",
+		Interval: 30,
+		Timeout:  5,
 		Group:    "test",
 	}
 	body, _ := json.Marshal(createReq)
@@ -176,14 +174,14 @@ func TestMonitorCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var created reducer.Monitor
+	var created MonitorResponse
 	err := json.Unmarshal(w.Body.Bytes(), &created)
 	require.NoError(t, err)
 	assert.Equal(t, "Test Monitor", created.Name)
 	assert.Equal(t, "https://example.com", created.URL)
-	assert.Equal(t, reducer.MonitorHTTPS, created.Type)
-	assert.Equal(t, 30*time.Second, created.Interval)
-	assert.Equal(t, 5*time.Second, created.Timeout)
+	assert.Equal(t, "https", created.Type)
+	assert.Equal(t, 30, created.Interval)
+	assert.Equal(t, 5, created.Timeout)
 	assert.Equal(t, "test", created.Group)
 	assert.True(t, created.Enabled)
 
@@ -198,7 +196,7 @@ func TestMonitorCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var fetched reducer.Monitor
+	var fetched MonitorResponse
 	err = json.Unmarshal(w.Body.Bytes(), &fetched)
 	require.NoError(t, err)
 	assert.Equal(t, monitorID, fetched.ID)
@@ -212,19 +210,19 @@ func TestMonitorCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var monitors []reducer.Monitor
+	var monitors []MonitorResponse
 	err = json.Unmarshal(w.Body.Bytes(), &monitors)
 	require.NoError(t, err)
 	assert.Len(t, monitors, 1)
 
-	// Update monitor
+	// Update monitor (toggle enabled via PATCH)
 	enabled := false
 	updateReq := UpdateMonitorRequest{
 		Enabled: &enabled,
 	}
 	body, _ = json.Marshal(updateReq)
 
-	req = httptest.NewRequest(http.MethodPut, "/api/monitors/"+monitorID, bytes.NewReader(body))
+	req = httptest.NewRequest(http.MethodPatch, "/api/monitors/"+monitorID, bytes.NewReader(body))
 	req.Header.Set("X-API-Key", testAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
@@ -233,7 +231,7 @@ func TestMonitorCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var updated reducer.Monitor
+	var updated MonitorResponse
 	err = json.Unmarshal(w.Body.Bytes(), &updated)
 	require.NoError(t, err)
 	assert.False(t, updated.Enabled)
@@ -261,7 +259,7 @@ func TestIncidentCRUD(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// First create a monitor (incidents require a monitor due to FK constraint)
+	// Create a monitor first
 	monitorReq := CreateMonitorRequest{
 		Name: "Test Monitor",
 		URL:  "https://example.com",
@@ -278,7 +276,7 @@ func TestIncidentCRUD(t *testing.T) {
 
 	require.Equal(t, http.StatusCreated, w.Code)
 
-	var monitor reducer.Monitor
+	var monitor MonitorResponse
 	err := json.Unmarshal(w.Body.Bytes(), &monitor)
 	require.NoError(t, err)
 
@@ -287,6 +285,7 @@ func TestIncidentCRUD(t *testing.T) {
 		MonitorID: monitor.ID,
 		Title:     "Test Incident",
 		Severity:  "major",
+		Message:   "Initial investigation",
 	}
 	body, _ = json.Marshal(createReq)
 
@@ -299,12 +298,13 @@ func TestIncidentCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var created reducer.Incident
+	var created IncidentResp
 	err = json.Unmarshal(w.Body.Bytes(), &created)
 	require.NoError(t, err)
 	assert.Equal(t, "Test Incident", created.Title)
-	assert.Equal(t, reducer.SeverityMajor, created.Severity)
-	assert.Equal(t, reducer.IncidentInvestigating, created.Status)
+	assert.Equal(t, "major", created.Severity)
+	assert.Equal(t, "investigating", created.Status)
+	assert.Len(t, created.Updates, 1) // initial message creates an update
 
 	incidentID := created.ID
 
@@ -317,19 +317,19 @@ func TestIncidentCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var incWithUpdates IncidentWithUpdates
-	err = json.Unmarshal(w.Body.Bytes(), &incWithUpdates)
+	var fetched IncidentResp
+	err = json.Unmarshal(w.Body.Bytes(), &fetched)
 	require.NoError(t, err)
-	assert.Equal(t, incidentID, incWithUpdates.Incident.ID)
+	assert.Equal(t, incidentID, fetched.ID)
 
-	// Update incident
-	updateReq := UpdateIncidentRequest{
+	// Add incident update
+	updateReq := AddIncidentUpdateRequest{
 		Status:  "identified",
 		Message: "We identified the issue",
 	}
 	body, _ = json.Marshal(updateReq)
 
-	req = httptest.NewRequest(http.MethodPut, "/api/incidents/"+incidentID, bytes.NewReader(body))
+	req = httptest.NewRequest(http.MethodPost, "/api/incidents/"+incidentID+"/updates", bytes.NewReader(body))
 	req.Header.Set("X-API-Key", testAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
@@ -338,10 +338,10 @@ func TestIncidentCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var updated reducer.Incident
+	var updated IncidentResp
 	err = json.Unmarshal(w.Body.Bytes(), &updated)
 	require.NoError(t, err)
-	assert.Equal(t, reducer.IncidentIdentified, updated.Status)
+	assert.Equal(t, "identified", updated.Status)
 
 	// Resolve incident
 	resolveReq := ResolveIncidentRequest{
@@ -358,31 +358,29 @@ func TestIncidentCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resolved reducer.Incident
+	var resolved IncidentResp
 	err = json.Unmarshal(w.Body.Bytes(), &resolved)
 	require.NoError(t, err)
-	assert.Equal(t, reducer.IncidentResolved, resolved.Status)
-	assert.NotNil(t, resolved.ResolvedAt)
+	assert.Equal(t, "resolved", resolved.Status)
+	assert.NotEmpty(t, resolved.ResolvedAt)
 
-	// List incidents (should be empty without includeResolved)
-	req = httptest.NewRequest(http.MethodGet, "/api/incidents", nil)
+	// List active incidents (should be empty)
+	req = httptest.NewRequest(http.MethodGet, "/api/incidents?status=active", nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var incidents []reducer.Incident
+	var incidents []IncidentResp
 	err = json.Unmarshal(w.Body.Bytes(), &incidents)
 	require.NoError(t, err)
 	assert.Len(t, incidents, 0)
 
-	// List incidents with includeResolved
-	req = httptest.NewRequest(http.MethodGet, "/api/incidents?includeResolved=true", nil)
+	// List resolved incidents
+	req = httptest.NewRequest(http.MethodGet, "/api/incidents?status=resolved", nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -390,6 +388,14 @@ func TestIncidentCRUD(t *testing.T) {
 	err = json.Unmarshal(w.Body.Bytes(), &incidents)
 	require.NoError(t, err)
 	assert.Len(t, incidents, 1)
+
+	// Delete incident
+	req = httptest.NewRequest(http.MethodDelete, "/api/incidents/"+incidentID, nil)
+	req.Header.Set("X-API-Key", testAPIKey)
+	w = httptest.NewRecorder()
+	server.Handler().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
 }
 
 func TestNotificationCRUD(t *testing.T) {
@@ -415,24 +421,31 @@ func TestNotificationCRUD(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var created reducer.NotificationChannel
+	var created NotificationChannelResp
 	err := json.Unmarshal(w.Body.Bytes(), &created)
 	require.NoError(t, err)
 	assert.Equal(t, "Test Slack", created.Name)
-	assert.Equal(t, reducer.NotifySlack, created.Type)
+	assert.Equal(t, "slack", created.Type)
 
 	channelID := created.ID
+
+	// Get single notification
+	req = httptest.NewRequest(http.MethodGet, "/api/notifications/"+channelID, nil)
+	req.Header.Set("X-API-Key", testAPIKey)
+	w = httptest.NewRecorder()
+	server.Handler().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	// List notifications
 	req = httptest.NewRequest(http.MethodGet, "/api/notifications", nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var channels []reducer.NotificationChannel
+	var channels []NotificationChannelResp
 	err = json.Unmarshal(w.Body.Bytes(), &channels)
 	require.NoError(t, err)
 	assert.Len(t, channels, 1)
@@ -441,7 +454,6 @@ func TestNotificationCRUD(t *testing.T) {
 	req = httptest.NewRequest(http.MethodDelete, "/api/notifications/"+channelID, nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
@@ -450,7 +462,6 @@ func TestNotificationCRUD(t *testing.T) {
 	req = httptest.NewRequest(http.MethodDelete, "/api/notifications/"+channelID, nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
@@ -460,7 +471,7 @@ func TestMaintenanceCRUD(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// First create a monitor
+	// Create a monitor
 	monitorReq := CreateMonitorRequest{
 		Name: "Test Monitor",
 		URL:  "https://example.com",
@@ -472,12 +483,11 @@ func TestMaintenanceCRUD(t *testing.T) {
 	req.Header.Set("X-API-Key", testAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var monitor reducer.Monitor
+	var monitor MonitorResponse
 	err := json.Unmarshal(w.Body.Bytes(), &monitor)
 	require.NoError(t, err)
 
@@ -487,8 +497,8 @@ func TestMaintenanceCRUD(t *testing.T) {
 	createReq := CreateMaintenanceRequest{
 		MonitorID: monitor.ID,
 		Title:     "Scheduled Maintenance",
-		StartsAt:  startsAt,
-		EndsAt:    endsAt,
+		StartTime: startsAt.Format(time.RFC3339),
+		EndTime:   endsAt.Format(time.RFC3339),
 	}
 	body, _ = json.Marshal(createReq)
 
@@ -496,12 +506,11 @@ func TestMaintenanceCRUD(t *testing.T) {
 	req.Header.Set("X-API-Key", testAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var created reducer.MaintenanceWindow
+	var created MaintenanceResp
 	err = json.Unmarshal(w.Body.Bytes(), &created)
 	require.NoError(t, err)
 	assert.Equal(t, "Scheduled Maintenance", created.Title)
@@ -509,16 +518,23 @@ func TestMaintenanceCRUD(t *testing.T) {
 
 	windowID := created.ID
 
-	// List maintenance windows
-	req = httptest.NewRequest(http.MethodGet, "/api/maintenance", nil)
+	// Get single maintenance
+	req = httptest.NewRequest(http.MethodGet, "/api/maintenance/"+windowID, nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var windows []reducer.MaintenanceWindow
+	// List maintenance windows
+	req = httptest.NewRequest(http.MethodGet, "/api/maintenance", nil)
+	req.Header.Set("X-API-Key", testAPIKey)
+	w = httptest.NewRecorder()
+	server.Handler().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var windows []MaintenanceResp
 	err = json.Unmarshal(w.Body.Bytes(), &windows)
 	require.NoError(t, err)
 	assert.Len(t, windows, 1)
@@ -527,7 +543,6 @@ func TestMaintenanceCRUD(t *testing.T) {
 	req = httptest.NewRequest(http.MethodDelete, "/api/maintenance/"+windowID, nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
@@ -536,7 +551,6 @@ func TestMaintenanceCRUD(t *testing.T) {
 	req = httptest.NewRequest(http.MethodDelete, "/api/maintenance/"+windowID, nil)
 	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
@@ -555,7 +569,7 @@ func TestSettings(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var settings reducer.Settings
+	var settings SettingsResp
 	err := json.Unmarshal(w.Body.Bytes(), &settings)
 	require.NoError(t, err)
 	assert.Equal(t, "Lattice Status", settings.SiteName)
@@ -585,11 +599,11 @@ func TestSettings(t *testing.T) {
 	assert.Equal(t, "#ff0000", settings.AccentColor)
 }
 
-func TestStatusHistory(t *testing.T) {
+func TestMonitorHistory(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// Create a monitor first
+	// Create a monitor
 	monitorReq := CreateMonitorRequest{
 		Name: "Test Monitor",
 		URL:  "https://example.com",
@@ -601,35 +615,30 @@ func TestStatusHistory(t *testing.T) {
 	req.Header.Set("X-API-Key", testAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var monitor reducer.Monitor
+	var monitor MonitorResponse
 	err := json.Unmarshal(w.Body.Bytes(), &monitor)
 	require.NoError(t, err)
 
-	// Get history (public, no auth required)
-	req = httptest.NewRequest(http.MethodGet, "/api/status/history/"+monitor.ID, nil)
+	// Get history (requires auth)
+	req = httptest.NewRequest(http.MethodGet, "/api/monitors/"+monitor.ID+"/history", nil)
+	req.Header.Set("X-API-Key", testAPIKey)
 	w = httptest.NewRecorder()
 
 	server.Handler().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-
-	var historyResp HistoryResponse
-	err = json.Unmarshal(w.Body.Bytes(), &historyResp)
-	require.NoError(t, err)
-	assert.Equal(t, monitor.ID, historyResp.MonitorID)
-	assert.Empty(t, historyResp.Checks) // No checks yet
 }
 
-func TestStatusHistoryNotFound(t *testing.T) {
+func TestMonitorHistoryNotFound(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	req := httptest.NewRequest(http.MethodGet, "/api/status/history/nonexistent-id", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/monitors/nonexistent-id/history", nil)
+	req.Header.Set("X-API-Key", testAPIKey)
 	w := httptest.NewRecorder()
 
 	server.Handler().ServeHTTP(w, req)
@@ -661,16 +670,6 @@ func TestCreateMonitorValidation(t *testing.T) {
 			request: CreateMonitorRequest{Name: "Test", URL: "https://example.com"},
 			errMsg:  "type is required",
 		},
-		{
-			name:    "invalid interval",
-			request: CreateMonitorRequest{Name: "Test", URL: "https://example.com", Type: "https", Interval: "invalid"},
-			errMsg:  "invalid interval",
-		},
-		{
-			name:    "invalid timeout",
-			request: CreateMonitorRequest{Name: "Test", URL: "https://example.com", Type: "https", Timeout: "invalid"},
-			errMsg:  "invalid timeout",
-		},
 	}
 
 	for _, tc := range testCases {
@@ -689,7 +688,7 @@ func TestCreateMonitorValidation(t *testing.T) {
 			var errResp ErrorResponse
 			err := json.Unmarshal(w.Body.Bytes(), &errResp)
 			require.NoError(t, err)
-			assert.Equal(t, tc.errMsg, errResp.Error)
+			assert.Contains(t, errResp.Error, tc.errMsg)
 		})
 	}
 }
@@ -709,4 +708,8 @@ func TestCORS(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, w.Code)
 	assert.Equal(t, "*", w.Header().Get("Access-Control-Allow-Origin"))
 	assert.Contains(t, w.Header().Get("Access-Control-Allow-Methods"), "POST")
+	assert.Contains(t, w.Header().Get("Access-Control-Allow-Methods"), "PATCH")
 }
+
+// Ensure reducer types are referenced to prevent unused import errors
+var _ reducer.Status

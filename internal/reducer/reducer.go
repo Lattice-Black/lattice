@@ -1,6 +1,5 @@
 package reducer
 
-
 import (
 	"fmt"
 	"time"
@@ -10,6 +9,8 @@ import (
 // plus any side effects that should be executed.
 // This function is PURE -- no I/O, no database, no network.
 // All side effects are returned as data for the runtime to execute.
+//
+// The caller MUST pass a cloned state if it needs to preserve the original.
 func Reduce(state State, action Action) (State, []SideEffect, error) {
 	switch a := action.(type) {
 	case CreateMonitor:
@@ -26,8 +27,12 @@ func Reduce(state State, action Action) (State, []SideEffect, error) {
 		return reduceUpdateIncident(state, a)
 	case ResolveIncident:
 		return reduceResolveIncident(state, a)
+	case DeleteIncident:
+		return reduceDeleteIncident(state, a)
 	case CreateNotificationChannel:
 		return reduceCreateNotificationChannel(state, a)
+	case UpdateNotificationChannel:
+		return reduceUpdateNotificationChannel(state, a)
 	case DeleteNotificationChannel:
 		return reduceDeleteNotificationChannel(state, a)
 	case CreateMaintenanceWindow:
@@ -68,11 +73,11 @@ func reduceCreateMonitor(state State, a CreateMonitor) (State, []SideEffect, err
 
 	// Default timeout
 	if m.Timeout == 0 {
-		m.Timeout = 10_000_000_000 // 10 seconds
+		m.Timeout = 10 * time.Second
 	}
 	// Default interval
 	if m.Interval == 0 {
-		m.Interval = 60_000_000_000 // 60 seconds
+		m.Interval = 60 * time.Second
 	}
 	// Default expected status for HTTP
 	if m.ExpectedStatus == 0 && (m.Type == MonitorHTTP || m.Type == MonitorHTTPS) {
@@ -96,6 +101,9 @@ func reduceUpdateMonitor(state State, a UpdateMonitor) (State, []SideEffect, err
 	}
 	if a.URL != nil {
 		m.URL = *a.URL
+	}
+	if a.Type != nil {
+		m.Type = *a.Type
 	}
 	if a.Interval != nil {
 		m.Interval = *a.Interval
@@ -200,6 +208,18 @@ func reduceCreateIncident(state State, a CreateIncident) (State, []SideEffect, e
 
 	state.Incidents[a.ID] = inc
 
+	// Create initial update if message is provided
+	if a.Message != "" {
+		update := IncidentUpdate{
+			ID:         fmt.Sprintf("%s-0", a.ID),
+			IncidentID: a.ID,
+			Status:     IncidentInvestigating,
+			Message:    a.Message,
+			CreatedAt:  a.Now,
+		}
+		state.IncidentUpdates[a.ID] = append(state.IncidentUpdates[a.ID], update)
+	}
+
 	effects := []SideEffect{PersistState{Action: a}}
 
 	// Notify all channels
@@ -284,18 +304,50 @@ func reduceResolveIncident(state State, a ResolveIncident) (State, []SideEffect,
 	return state, effects, nil
 }
 
+func reduceDeleteIncident(state State, a DeleteIncident) (State, []SideEffect, error) {
+	if _, exists := state.Incidents[a.ID]; !exists {
+		return state, nil, fmt.Errorf("incident %s not found", a.ID)
+	}
+	delete(state.Incidents, a.ID)
+	delete(state.IncidentUpdates, a.ID)
+	return state, []SideEffect{PersistState{Action: a}}, nil
+}
+
 func reduceCreateNotificationChannel(state State, a CreateNotificationChannel) (State, []SideEffect, error) {
 	if _, exists := state.NotificationChannels[a.ID]; exists {
 		return state, nil, fmt.Errorf("notification channel %s already exists", a.ID)
 	}
 
 	ch := NotificationChannel{
-		ID:      a.ID,
-		Type:    a.Type,
-		Name:    a.Name,
-		Config:  a.Config,
-		Enabled: true,
+		ID:        a.ID,
+		Type:      a.Type,
+		Name:      a.Name,
+		Config:    a.Config,
+		Enabled:   true,
+		CreatedAt: a.Now,
+		UpdatedAt: a.Now,
 	}
+
+	state.NotificationChannels[a.ID] = ch
+	return state, []SideEffect{PersistState{Action: a}}, nil
+}
+
+func reduceUpdateNotificationChannel(state State, a UpdateNotificationChannel) (State, []SideEffect, error) {
+	ch, exists := state.NotificationChannels[a.ID]
+	if !exists {
+		return state, nil, fmt.Errorf("notification channel %s not found", a.ID)
+	}
+
+	if a.Name != nil {
+		ch.Name = *a.Name
+	}
+	if a.Config != nil {
+		ch.Config = a.Config
+	}
+	if a.Enabled != nil {
+		ch.Enabled = *a.Enabled
+	}
+	ch.UpdatedAt = a.Now
 
 	state.NotificationChannels[a.ID] = ch
 	return state, []SideEffect{PersistState{Action: a}}, nil
@@ -315,11 +367,13 @@ func reduceCreateMaintenanceWindow(state State, a CreateMaintenanceWindow) (Stat
 	}
 
 	mw := MaintenanceWindow{
-		ID:        a.ID,
-		MonitorID: a.MonitorID,
-		Title:     a.Title,
-		StartsAt:  a.StartsAt,
-		EndsAt:    a.EndsAt,
+		ID:          a.ID,
+		MonitorID:   a.MonitorID,
+		Title:       a.Title,
+		Description: a.Description,
+		StartsAt:    a.StartsAt,
+		EndsAt:      a.EndsAt,
+		CreatedAt:   a.Now,
 	}
 
 	state.MaintenanceWindows[a.ID] = mw

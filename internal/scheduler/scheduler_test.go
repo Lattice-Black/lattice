@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -16,10 +17,13 @@ import (
 )
 
 type mockEffectHandler struct {
+	mu      sync.Mutex
 	effects []reducer.SideEffect
 }
 
 func (m *mockEffectHandler) Handle(ctx context.Context, effect reducer.SideEffect) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.effects = append(m.effects, effect)
 	return nil
 }
@@ -385,7 +389,10 @@ func TestScheduler_NotificationOnFailureThreshold(t *testing.T) {
 	updatedState := scheduler.GetState()
 	assert.Equal(t, 3, updatedState.ConsecutiveFailures["mon-1"])
 
-	// Verify notification effect was sent
+	// Verify notification effect was sent (async, so wait briefly)
+	time.Sleep(100 * time.Millisecond)
+	handler.mu.Lock()
+	defer handler.mu.Unlock()
 	var foundNotification bool
 	for _, effect := range handler.effects {
 		if _, ok := effect.(reducer.SendNotification); ok {

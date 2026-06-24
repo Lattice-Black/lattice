@@ -30,23 +30,23 @@ type Monitor struct {
 	Name           string        `json:"name"`
 	URL            string        `json:"url"`
 	Type           MonitorType   `json:"type"`
-	Interval       time.Duration `json:"interval"`
-	Timeout        time.Duration `json:"timeout"`
-	ExpectedStatus int           `json:"expectedStatus"`
+	Interval       time.Duration `json:"-"`
+	Timeout        time.Duration `json:"-"`
+	ExpectedStatus int           `json:"expected_status,omitempty"`
 	Enabled        bool          `json:"enabled"`
-	Group          string        `json:"group"`
-	CreatedAt      time.Time     `json:"createdAt"`
-	UpdatedAt      time.Time     `json:"updatedAt"`
+	Group          string        `json:"group,omitempty"`
+	CreatedAt      time.Time     `json:"created_at"`
+	UpdatedAt      time.Time     `json:"updated_at"`
 }
 
 type Check struct {
-	ID         string        `json:"id"`
-	MonitorID  string        `json:"monitorId"`
-	Status     Status        `json:"status"`
-	LatencyMs  int64         `json:"latencyMs"`
-	StatusCode int           `json:"statusCode"`
-	Error      string        `json:"error,omitempty"`
-	CheckedAt  time.Time     `json:"checkedAt"`
+	ID         string    `json:"id"`
+	MonitorID  string    `json:"monitor_id"`
+	Status     Status    `json:"status"`
+	LatencyMs  int64     `json:"latency_ms"`
+	StatusCode int       `json:"status_code"`
+	Error      string    `json:"error,omitempty"`
+	CheckedAt  time.Time `json:"checked_at"`
 }
 
 // --- Incident Types ---
@@ -70,22 +70,22 @@ const (
 
 type Incident struct {
 	ID          string         `json:"id"`
-	MonitorID   string         `json:"monitorId"`
+	MonitorID   string         `json:"monitor_id,omitempty"`
 	Title       string         `json:"title"`
 	Severity    Severity       `json:"severity"`
 	Status      IncidentStatus `json:"status"`
-	AutoCreated bool           `json:"autoCreated"`
-	CreatedAt   time.Time      `json:"createdAt"`
-	UpdatedAt   time.Time      `json:"updatedAt"`
-	ResolvedAt  *time.Time     `json:"resolvedAt,omitempty"`
+	AutoCreated bool           `json:"auto_created"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	ResolvedAt  *time.Time     `json:"resolved_at,omitempty"`
 }
 
 type IncidentUpdate struct {
 	ID         string         `json:"id"`
-	IncidentID string         `json:"incidentId"`
+	IncidentID string         `json:"incident_id"`
 	Status     IncidentStatus `json:"status"`
 	Message    string         `json:"message"`
-	CreatedAt  time.Time      `json:"createdAt"`
+	CreatedAt  time.Time      `json:"created_at"`
 }
 
 // --- Notification Types ---
@@ -101,29 +101,33 @@ const (
 )
 
 type NotificationChannel struct {
-	ID      string                  `json:"id"`
-	Type    NotificationChannelType `json:"type"`
-	Name    string                  `json:"name"`
-	Config  map[string]string       `json:"config"`
-	Enabled bool                    `json:"enabled"`
+	ID        string                  `json:"id"`
+	Type      NotificationChannelType `json:"type"`
+	Name      string                  `json:"name"`
+	Config    map[string]string       `json:"config"`
+	Enabled   bool                    `json:"enabled"`
+	CreatedAt time.Time               `json:"created_at"`
+	UpdatedAt time.Time               `json:"updated_at"`
 }
 
 // --- Maintenance ---
 
 type MaintenanceWindow struct {
-	ID        string    `json:"id"`
-	MonitorID string    `json:"monitorId"`
-	Title     string    `json:"title"`
-	StartsAt  time.Time `json:"startsAt"`
-	EndsAt    time.Time `json:"endsAt"`
+	ID          string    `json:"id"`
+	MonitorID   string    `json:"monitor_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description,omitempty"`
+	StartsAt    time.Time `json:"start_time"`
+	EndsAt      time.Time `json:"end_time"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // --- Settings ---
 
 type Settings struct {
-	SiteName    string `json:"siteName"`
-	LogoURL     string `json:"logoUrl,omitempty"`
-	AccentColor string `json:"accentColor"`
-	CustomCSS   string `json:"customCss,omitempty"`
-	CustomDomain string `json:"customDomain,omitempty"`
+	SiteName     string `json:"site_name"`
+	LogoURL      string `json:"logo_url,omitempty"`
+	AccentColor  string `json:"accent_color"`
+	CustomCSS    string `json:"custom_css,omitempty"`
+	CustomDomain string `json:"custom_domain,omitempty"`
 }

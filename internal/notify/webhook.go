@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Lattice-Black/lattice/internal/reducer"
 )
@@ -21,7 +22,7 @@ type WebhookDispatcher struct {
 // NewWebhookDispatcher creates a new webhook dispatcher.
 func NewWebhookDispatcher() *WebhookDispatcher {
 	return &WebhookDispatcher{
-		client: http.DefaultClient,
+		client: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 

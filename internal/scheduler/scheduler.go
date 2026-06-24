@@ -7,9 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Lattice-Black/lattice/internal/config"
 	"github.com/Lattice-Black/lattice/internal/monitor"
 	"github.com/Lattice-Black/lattice/internal/reducer"
 	"github.com/Lattice-Black/lattice/internal/store"
+	"github.com/google/uuid"
 )
 
 // EffectHandler processes side effects from the reducer.
@@ -21,6 +23,7 @@ type EffectHandler interface {
 type Scheduler struct {
 	store         store.Store
 	effectHandler EffectHandler
+	retentionDays int
 
 	mu       sync.RWMutex
 	state    *reducer.State
@@ -42,7 +45,113 @@ func New(s store.Store, state *reducer.State, handler EffectHandler) *Scheduler 
 		state:         state,
 		effectHandler: handler,
 		monitors:      make(map[string]*monitorRunner),
+		retentionDays: 90,
 	}
+}
+
+// SetRetentionDays configures the check history retention period.
+func (s *Scheduler) SetRetentionDays(days int) {
+	s.retentionDays = days
+}
+
+// SeedFromConfig populates the store and state with monitors and notifications
+// defined in the YAML config that don't already exist in the database.
+func (s *Scheduler) SeedFromConfig(cfg *config.Config) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	now := time.Now().UTC()
+
+	// Seed monitors
+	for _, mc := range cfg.Monitors {
+		if !mc.IsEnabled() {
+			continue
+		}
+
+		// Check if a monitor with the same name+url already exists
+		exists := false
+		for _, m := range s.state.Monitors {
+			if m.Name == mc.Name && m.URL == mc.URL {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue
+		}
+
+		id := uuid.New().String()
+		action := reducer.CreateMonitor{
+			ID:             id,
+			Name:           mc.Name,
+			URL:            mc.URL,
+			Type:           reducer.MonitorType(mc.Type),
+			Interval:       mc.ParsedInterval(),
+			Timeout:        mc.ParsedTimeout(),
+			ExpectedStatus: mc.ExpectedStatus,
+			Group:          mc.Group,
+			Now:            now,
+		}
+
+		newState, effects, err := reducer.Reduce(s.state.Clone(), action)
+		if err != nil {
+			log.Printf("warning: failed to seed monitor %s: %v", mc.Name, err)
+			continue
+		}
+		*s.state = newState
+
+		// Persist
+		for range effects {
+			if err := s.persistAction(action); err != nil {
+				log.Printf("warning: failed to persist seeded monitor %s: %v", mc.Name, err)
+			}
+		}
+		log.Printf("Seeded monitor from config: %s", mc.Name)
+	}
+
+	// Seed notification channels
+	for _, nc := range cfg.Notifications {
+		if !nc.IsEnabled() {
+			continue
+		}
+
+		// Check if a channel with the same name+type already exists
+		exists := false
+		for _, ch := range s.state.NotificationChannels {
+			if ch.Name == nc.Name && string(ch.Type) == nc.Type {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue
+		}
+
+		id := uuid.New().String()
+		action := reducer.CreateNotificationChannel{
+			ID:     id,
+			Type:   reducer.NotificationChannelType(nc.Type),
+			Name:   nc.Name,
+			Config: nc.Config,
+			Now:    now,
+		}
+
+		newState, effects, err := reducer.Reduce(s.state.Clone(), action)
+		if err != nil {
+			log.Printf("warning: failed to seed notification %s: %v", nc.Name, err)
+			continue
+		}
+		*s.state = newState
+
+		for range effects {
+			if err := s.persistAction(action); err != nil {
+				log.Printf("warning: failed to persist seeded notification %s: %v", nc.Name, err)
+			}
+		}
+		log.Printf("Seeded notification channel from config: %s", nc.Name)
+	}
+
+	return nil
 }
 
 // Start begins scheduling checks for all enabled monitors.
@@ -56,7 +165,31 @@ func (s *Scheduler) Start(ctx context.Context) error {
 		}
 	}
 
+	// Start pruning goroutine
+	go s.runPruning(ctx)
+
 	return nil
+}
+
+// runPruning periodically removes old checks beyond the retention period.
+func (s *Scheduler) runPruning(ctx context.Context) {
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			before := time.Now().AddDate(0, 0, -s.retentionDays)
+			pruned, err := s.store.PruneChecks(before)
+			if err != nil {
+				log.Printf("error pruning old checks: %v", err)
+			} else if pruned > 0 {
+				log.Printf("Pruned %d old checks", pruned)
+			}
+		}
+	}
 }
 
 // Stop gracefully stops all monitor checks.
@@ -104,36 +237,41 @@ func (s *Scheduler) UpdateMonitor(ctx context.Context, m reducer.Monitor) {
 }
 
 // Dispatch processes an action through the reducer and handles effects.
+// State is deep-copied before mutation to prevent concurrent access.
 func (s *Scheduler) Dispatch(ctx context.Context, action reducer.Action) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	newState, effects, err := reducer.Reduce(*s.state, action)
+	// Clone state so the reducer mutates a copy, not the live state
+	newState, effects, err := reducer.Reduce(s.state.Clone(), action)
 	if err != nil {
 		return err
 	}
 
+	// Atomically swap state
 	*s.state = newState
 
 	// Process side effects
+	// PersistState effects are handled synchronously (fast, local)
+	// SendNotification effects are handled asynchronously (slow, network)
 	for _, effect := range effects {
-		if err := s.handleEffect(ctx, effect); err != nil {
-			log.Printf("error handling effect %s: %v", effect.EffectType(), err)
+		switch e := effect.(type) {
+		case reducer.PersistState:
+			if err := s.persistAction(e.Action); err != nil {
+				log.Printf("error persisting action %s: %v", e.Action.ActionType(), err)
+			}
+		default:
+			// Handle notification effects asynchronously to avoid blocking
+			if s.effectHandler != nil {
+				go func(ef reducer.SideEffect) {
+					if err := s.effectHandler.Handle(ctx, ef); err != nil {
+						log.Printf("error handling effect %s: %v", ef.EffectType(), err)
+					}
+				}(effect)
+			}
 		}
 	}
 
-	return nil
-}
-
-func (s *Scheduler) handleEffect(ctx context.Context, effect reducer.SideEffect) error {
-	switch e := effect.(type) {
-	case reducer.PersistState:
-		return s.persistAction(e.Action)
-	default:
-		if s.effectHandler != nil {
-			return s.effectHandler.Handle(ctx, effect)
-		}
-	}
 	return nil
 }
 
@@ -160,13 +298,23 @@ func (s *Scheduler) persistAction(action reducer.Action) error {
 		return s.store.RecordCheck(check)
 	case reducer.CreateIncident:
 		inc := s.state.Incidents[a.ID]
-		return s.store.CreateIncident(inc)
+		if err := s.store.CreateIncident(inc); err != nil {
+			return err
+		}
+		// Persist initial incident update if present
+		updates := s.state.IncidentUpdates[a.ID]
+		for _, u := range updates {
+			if err := s.store.CreateIncidentUpdate(u); err != nil {
+				return err
+			}
+		}
+		return nil
 	case reducer.UpdateIncident:
 		inc := s.state.Incidents[a.ID]
 		if err := s.store.UpdateIncident(inc); err != nil {
 			return err
 		}
-		// Also persist the incident update
+		// Also persist the latest incident update
 		updates := s.state.IncidentUpdates[a.ID]
 		if len(updates) > 0 {
 			latestUpdate := updates[len(updates)-1]
@@ -185,9 +333,14 @@ func (s *Scheduler) persistAction(action reducer.Action) error {
 			return s.store.CreateIncidentUpdate(latestUpdate)
 		}
 		return nil
+	case reducer.DeleteIncident:
+		return s.store.DeleteIncident(a.ID)
 	case reducer.CreateNotificationChannel:
 		ch := s.state.NotificationChannels[a.ID]
 		return s.store.CreateNotificationChannel(ch)
+	case reducer.UpdateNotificationChannel:
+		ch := s.state.NotificationChannels[a.ID]
+		return s.store.UpdateNotificationChannel(ch)
 	case reducer.DeleteNotificationChannel:
 		return s.store.DeleteNotificationChannel(a.ID)
 	case reducer.CreateMaintenanceWindow:
@@ -220,7 +373,7 @@ func (s *Scheduler) runMonitor(ctx context.Context, runner *monitorRunner) {
 	defer s.wg.Done()
 
 	// Add jitter (up to 10% of interval)
-	jitter := time.Duration(rand.Int63n(int64(runner.monitor.Interval / 10)))
+	jitter := time.Duration(rand.Int63n(int64(runner.monitor.Interval/10) + 1))
 
 	// Perform initial check after jitter
 	select {
@@ -264,9 +417,9 @@ func (s *Scheduler) performCheck(ctx context.Context, runner *monitorRunner) {
 	}
 }
 
-// GetState returns a copy of the current state.
+// GetState returns a deep copy of the current state.
 func (s *Scheduler) GetState() reducer.State {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return *s.state
+	return s.state.Clone()
 }

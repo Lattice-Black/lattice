@@ -86,7 +86,7 @@ function FeatureCard({ feature }: { feature: Feature }) {
 
 export default function Features() {
   return (
-    <section className="py-24 lg:py-32 border-b border-border">
+    <section className="py-24 lg:py-32 border-b border-border" id="features">
       <div className="section-container">
         <div className="mb-12 lg:mb-16">
           <h2 className="text-section-mobile md:text-section-desktop text-text-primary">

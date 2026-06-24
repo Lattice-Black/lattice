@@ -4,8 +4,12 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./data:/data
-      - ./lattice.yaml:/lattice.yaml:ro
+      - lattice-data:/data
+      - ./lattice.yaml:/app/lattice.yaml:ro
     environment:
       - LATTICE_API_KEY=changeme
+      - LATTICE_DB_PATH=/data/lattice.db
     restart: unless-stopped
+
+volumes:
+  lattice-data:

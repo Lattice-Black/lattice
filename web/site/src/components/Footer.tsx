@@ -21,18 +21,26 @@ export default function Footer() {
                 GitHub
               </a>
               <a
-                href="#"
+                href="https://github.com/lattice-black/lattice#readme"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
                 Docs
               </a>
               <a
-                href="#"
+                href="#get-started"
                 className="text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
-                Discord
+                Self-Host
               </a>
             </nav>
+          </div>
+
+          <div className="mt-4 text-center">
+            <p className="text-xs text-text-secondary">
+              MIT License &middot; Built for people who self-host everything else.
+            </p>
           </div>
         </div>
       </div>

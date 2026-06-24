@@ -304,7 +304,7 @@ func TestNewChecker(t *testing.T) {
 		{reducer.MonitorHTTPS, "*monitor.HTTPChecker"},
 		{reducer.MonitorTCP, "*monitor.TCPChecker"},
 		{reducer.MonitorDNS, "*monitor.DNSChecker"},
-		{reducer.MonitorICMP, "*monitor.HTTPChecker"}, // Fallback for unimplemented
+		{reducer.MonitorICMP, "*monitor.ICMPChecker"},
 	}
 
 	for _, tt := range tests {

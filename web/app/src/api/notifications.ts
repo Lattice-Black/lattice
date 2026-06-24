@@ -1,6 +1,6 @@
 import { api } from './client'
 
-export type NotificationType = 'email' | 'slack' | 'webhook' | 'pagerduty' | 'discord'
+export type NotificationType = 'email' | 'slack' | 'webhook' | 'ntfy' | 'discord'
 
 export interface NotificationChannel {
   id: string

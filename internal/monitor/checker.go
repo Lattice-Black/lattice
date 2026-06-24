@@ -10,6 +10,8 @@ import (
 
 	"github.com/Lattice-Black/lattice/internal/reducer"
 	"github.com/google/uuid"
+	"golang.org/x/net/icmp"
+	"golang.org/x/net/ipv4"
 )
 
 // Checker performs health checks on monitors.
@@ -33,7 +35,6 @@ func NewHTTPChecker() *HTTPChecker {
 			},
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					// Allow self-signed certs for internal monitoring
 					InsecureSkipVerify: false,
 				},
 				DisableKeepAlives: true,
@@ -201,6 +202,94 @@ func (c *DNSChecker) Check(ctx context.Context, monitor reducer.Monitor) reducer
 	return check
 }
 
+// ICMPChecker performs ICMP ping checks.
+type ICMPChecker struct{}
+
+// NewICMPChecker creates a new ICMP checker.
+func NewICMPChecker() *ICMPChecker {
+	return &ICMPChecker{}
+}
+
+// Check performs an ICMP echo request and returns the check result.
+func (c *ICMPChecker) Check(ctx context.Context, monitor reducer.Monitor) reducer.Check {
+	check := reducer.Check{
+		ID:        uuid.New().String(),
+		MonitorID: monitor.ID,
+		CheckedAt: time.Now().UTC(),
+	}
+
+	// Parse the hostname/IP from the URL
+	// Expected format: icmp://host or just host/IP
+	host := monitor.URL
+	if len(host) > 7 && host[:7] == "icmp://" {
+		host = host[7:]
+	}
+
+	// Create the ICMP message
+	m := icmp.Message{
+		Type: ipv4.ICMPTypeEcho,
+		Code: 0,
+		Body: &icmp.Echo{
+			ID:   1,
+			Seq:  1,
+			Data: []byte("LATTICE-PING"),
+		},
+	}
+
+	mb, err := m.Marshal(nil)
+	if err != nil {
+		check.Status = reducer.StatusDown
+		check.Error = fmt.Sprintf("failed to marshal ICMP message: %v", err)
+		return check
+	}
+
+	// Resolve the address
+	dst, err := net.ResolveIPAddr("ip4", host)
+	if err != nil {
+		check.Status = reducer.StatusDown
+		check.Error = fmt.Sprintf("failed to resolve address: %v", err)
+		return check
+	}
+
+	// Open a raw ICMP connection
+	conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
+	if err != nil {
+		// If we can't open a raw socket (common in containers/unprivileged),
+		// report the error gracefully
+		check.Status = reducer.StatusDown
+		check.Error = fmt.Sprintf("ICMP listen failed (requires root/cap_net_raw): %v", err)
+		return check
+	}
+	defer conn.Close()
+
+	// Set deadline based on timeout
+	deadline := time.Now().Add(monitor.Timeout)
+	conn.SetDeadline(deadline)
+
+	start := time.Now()
+	_, err = conn.WriteTo(mb, dst)
+	if err != nil {
+		check.Status = reducer.StatusDown
+		check.Error = fmt.Sprintf("failed to send ICMP: %v", err)
+		return check
+	}
+
+	rb := make([]byte, 1500)
+	_, _, err = conn.ReadFrom(rb)
+	latency := time.Since(start)
+
+	check.LatencyMs = latency.Milliseconds()
+
+	if err != nil {
+		check.Status = reducer.StatusDown
+		check.Error = fmt.Sprintf("failed to receive ICMP reply: %v", err)
+		return check
+	}
+
+	check.Status = reducer.StatusUp
+	return check
+}
+
 // NewChecker creates the appropriate checker for a monitor type.
 func NewChecker(monitorType reducer.MonitorType) Checker {
 	switch monitorType {
@@ -210,6 +299,8 @@ func NewChecker(monitorType reducer.MonitorType) Checker {
 		return NewTCPChecker()
 	case reducer.MonitorDNS:
 		return NewDNSChecker()
+	case reducer.MonitorICMP:
+		return NewICMPChecker()
 	default:
 		// Return HTTP checker as fallback
 		return NewHTTPChecker()

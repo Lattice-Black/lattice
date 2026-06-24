@@ -26,8 +26,8 @@ export default function Hero() {
                 Get Started
                 <span className="ml-2">&rarr;</span>
               </a>
-              <a href="#demo" className="btn-ghost text-center">
-                View Demo
+              <a href="https://github.com/lattice-black/lattice" target="_blank" rel="noopener noreferrer" className="btn-ghost text-center">
+                View on GitHub
               </a>
             </div>
           </div>

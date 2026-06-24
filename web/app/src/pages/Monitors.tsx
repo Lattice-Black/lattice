@@ -15,9 +15,10 @@ import type { Monitor, CreateMonitorInput } from '../api/monitors'
 
 const monitorTypeOptions = [
   { value: 'http', label: 'HTTP' },
+  { value: 'https', label: 'HTTPS' },
   { value: 'tcp', label: 'TCP' },
-  { value: 'ping', label: 'Ping' },
   { value: 'dns', label: 'DNS' },
+  { value: 'icmp', label: 'ICMP Ping' },
 ]
 
 const intervalOptions = [
@@ -50,7 +51,7 @@ function MonitorForm({ monitor, onSubmit, onCancel, isLoading }: MonitorFormProp
     onSubmit({
       name: formData.name,
       url: formData.url,
-      type: formData.type as 'http' | 'tcp' | 'ping' | 'dns',
+      type: formData.type as 'http' | 'https' | 'tcp' | 'dns' | 'icmp',
       interval: parseInt(formData.interval),
       timeout: parseInt(formData.timeout),
       expected_status: formData.type === 'http' ? parseInt(formData.expected_status) : undefined,

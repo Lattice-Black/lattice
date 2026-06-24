@@ -269,11 +269,13 @@ func TestNotificationChannelOperations(t *testing.T) {
 
 	// Create channel
 	ch := reducer.NotificationChannel{
-		ID:      "ch-1",
-		Type:    reducer.NotifySlack,
-		Name:    "Slack Alerts",
-		Config:  map[string]string{"webhook_url": "https://hooks.slack.com/xxx"},
-		Enabled: true,
+		ID:        "ch-1",
+		Type:      reducer.NotifySlack,
+		Name:      "Slack Alerts",
+		Config:    map[string]string{"webhook_url": "https://hooks.slack.com/xxx"},
+		Enabled:   true,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 	err := s.CreateNotificationChannel(ch)
 	require.NoError(t, err)
@@ -493,7 +495,7 @@ func TestMigrationsRunOnce(t *testing.T) {
 	var count int
 	err = store2.db.QueryRow("SELECT COUNT(*) FROM migrations").Scan(&count)
 	require.NoError(t, err)
-	assert.Equal(t, 1, count) // Only one migration file
+	require.Equal(t, 2, count) // Two migration files
 }
 
 func TestCascadeDelete(t *testing.T) {

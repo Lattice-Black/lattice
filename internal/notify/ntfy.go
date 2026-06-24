@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Lattice-Black/lattice/internal/reducer"
 )
@@ -17,7 +18,7 @@ type NtfyDispatcher struct {
 // NewNtfyDispatcher creates a new ntfy dispatcher.
 func NewNtfyDispatcher() *NtfyDispatcher {
 	return &NtfyDispatcher{
-		client: http.DefaultClient,
+		client: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 

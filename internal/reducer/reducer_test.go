@@ -287,6 +287,7 @@ func TestNotificationChannel(t *testing.T) {
 	newState, _, err := Reduce(state, CreateNotificationChannel{
 		ID: "ch-1", Type: NotifySlack, Name: "alerts",
 		Config: map[string]string{"webhook_url": "https://hooks.slack.com/xxx"},
+		Now:    testNow,
 	})
 	require.NoError(t, err)
 	assert.Len(t, newState.NotificationChannels, 1)

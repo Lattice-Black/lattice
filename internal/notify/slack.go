@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Lattice-Black/lattice/internal/reducer"
 )
@@ -18,7 +19,7 @@ type SlackDispatcher struct {
 // NewSlackDispatcher creates a new Slack dispatcher.
 func NewSlackDispatcher() *SlackDispatcher {
 	return &SlackDispatcher{
-		client: http.DefaultClient,
+		client: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 

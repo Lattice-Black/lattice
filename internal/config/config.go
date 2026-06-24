@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -50,7 +51,7 @@ type NotificationConfig struct {
 	Config  map[string]string `yaml:"config"`
 }
 
-// Load reads and parses a YAML configuration file.
+// Load reads and parses a YAML configuration file, then overlays env vars.
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -64,6 +65,9 @@ func Load(path string) (*Config, error) {
 
 	// Apply defaults
 	cfg.applyDefaults()
+
+	// Overlay environment variables
+	cfg.applyEnvVars()
 
 	// Validate
 	if err := cfg.validate(); err != nil {
@@ -81,12 +85,30 @@ func LoadFromBytes(data []byte) (*Config, error) {
 	}
 
 	cfg.applyDefaults()
+	cfg.applyEnvVars()
 
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
 
 	return &cfg, nil
+}
+
+// DefaultConfig returns a config with sensible defaults, overlaid with env vars.
+func DefaultConfig() *Config {
+	cfg := &Config{
+		Server: ServerConfig{
+			Port:        8080,
+			Host:        "0.0.0.0",
+			CORSOrigins: []string{"*"},
+		},
+		Database: DatabaseConfig{
+			Path:          "./lattice.db",
+			RetentionDays: 90,
+		},
+	}
+	cfg.applyEnvVars()
+	return cfg
 }
 
 func (c *Config) applyDefaults() {
@@ -131,6 +153,30 @@ func (c *Config) applyDefaults() {
 		}
 		if c.Notifications[i].Config == nil {
 			c.Notifications[i].Config = make(map[string]string)
+		}
+	}
+}
+
+// applyEnvVars overlays environment variables on top of config values.
+// Env vars take precedence over YAML values.
+func (c *Config) applyEnvVars() {
+	if v := os.Getenv("LATTICE_API_KEY"); v != "" {
+		c.Server.APIKey = v
+	}
+	if v := os.Getenv("LATTICE_DB_PATH"); v != "" {
+		c.Database.Path = v
+	}
+	if v := os.Getenv("LATTICE_HOST"); v != "" {
+		c.Server.Host = v
+	}
+	if v := os.Getenv("LATTICE_PORT"); v != "" {
+		if port, err := strconv.Atoi(v); err == nil {
+			c.Server.Port = port
+		}
+	}
+	if v := os.Getenv("LATTICE_RETENTION_DAYS"); v != "" {
+		if days, err := strconv.Atoi(v); err == nil {
+			c.Database.RetentionDays = days
 		}
 	}
 }
