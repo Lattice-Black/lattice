@@ -80,7 +80,7 @@ function MonitorForm({ monitor, onSubmit, onCancel, isLoading }: MonitorFormProp
       <Select
         label="Type"
         value={formData.type}
-        onChange={(e) => setFormData({ ...formData, type: e.target.value as 'http' | 'tcp' | 'ping' | 'dns' })}
+        onChange={(e) => setFormData({ ...formData, type: e.target.value as 'http' | 'https' | 'tcp' | 'dns' | 'icmp' })}
         options={monitorTypeOptions}
       />
 
