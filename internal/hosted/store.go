@@ -158,11 +158,11 @@ func (s *Store) GetTenantByStripeCustomer(customerID string) (*Tenant, error) {
 	return scanTenant(row)
 }
 
-// GetTenantByEmail retrieves a tenant by email.
+// GetTenantByEmail retrieves a non-deleted tenant by email.
 func (s *Store) GetTenantByEmail(email string) (*Tenant, error) {
 	row := s.db.QueryRow(`
 		SELECT id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
-		FROM tenants WHERE email = ?
+		FROM tenants WHERE email = ? AND status != 'deleted'
 	`, email)
 	return scanTenant(row)
 }

@@ -74,6 +74,7 @@ func (s *Server) setupRoutes() {
 	r.Get("/api/hosted/signup", s.handleGetSignup) // returns signup page info
 	r.Post("/api/hosted/signup", s.handleSignup)
 	r.Get("/api/hosted/check-slug/{slug}", s.handleCheckSlug)
+	r.Post("/api/hosted/login", s.handleLogin) // retrieve tenant URL + API key by email
 
 	// Stripe webhook (no auth, verified by signature)
 	r.Post("/api/hosted/stripe/webhook", s.handleStripeWebhook)
@@ -243,6 +244,41 @@ func (s *Server) handleCheckSlug(w http.ResponseWriter, r *http.Request) {
 		"available": !exists,
 		"slug":      slug,
 		"url":       slug + ".lattice.black",
+	})
+}
+
+func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		BadRequest(w, "invalid JSON")
+		return
+	}
+
+	email := strings.TrimSpace(strings.ToLower(req.Email))
+	if email == "" || !strings.Contains(email, "@") {
+		BadRequest(w, "valid email is required")
+		return
+	}
+
+	tenant, err := s.store.GetTenantByEmail(email)
+	if err != nil {
+		InternalError(w, "failed to lookup account")
+		return
+	}
+	if tenant == nil {
+		JSON(w, 200, map[string]any{"exists": false})
+		return
+	}
+
+	// Return tenant URL and fresh API key so they can access their dashboard
+	JSON(w, 200, map[string]any{
+		"exists":        true,
+		"tenant_url":    tenant.TenantURL(),
+		"dashboard_url": tenant.DashboardURL(),
+		"api_key":       tenant.APIKey,
+		"status":        string(tenant.Status),
 	})
 }
 
