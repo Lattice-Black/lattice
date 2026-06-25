@@ -3,6 +3,7 @@ package hosted
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -45,6 +46,7 @@ func (s *Store) migrate() error {
 			email TEXT NOT NULL,
 			slug TEXT NOT NULL,
 			api_key TEXT NOT NULL,
+			password_hash TEXT NOT NULL DEFAULT '',
 			status TEXT NOT NULL DEFAULT 'trial',
 			stripe_customer_id TEXT NOT NULL DEFAULT '',
 			stripe_sub_id TEXT NOT NULL DEFAULT '',
@@ -72,23 +74,30 @@ func (s *Store) migrate() error {
 // migrateDropSlugUnique checks if the tenants table has a column-level UNIQUE
 // constraint on slug and migrates it to use only the partial unique index.
 func (s *Store) migrateDropSlugUnique() error {
-	// Check if the old implicit unique index exists (sqlite_autoindex_tenants_1)
-	var name string
-	err := s.db.QueryRow(`SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='tenants' AND name='sqlite_autoindex_tenants_1'`).Scan(&name)
-	if err == sql.ErrNoRows {
-		return nil // already migrated
-	}
+	// Check the table's CREATE SQL for a column-level UNIQUE on slug.
+	// We can't use sqlite_autoindex_tenants_1 because that index also covers
+	// the PRIMARY KEY (id TEXT PRIMARY KEY), so it always exists.
+	var tableSQL string
+	err := s.db.QueryRow(`SELECT sql FROM sqlite_master WHERE type='table' AND name='tenants'`).Scan(&tableSQL)
 	if err != nil {
-		return fmt.Errorf("failed to check schema: %w", err)
+		return fmt.Errorf("failed to read tenants schema: %w", err)
 	}
 
-	// Recreate the table without the column-level UNIQUE constraint
+	// If the slug column does NOT have a column-level UNIQUE constraint,
+	// the migration has already been applied.
+	if !strings.Contains(tableSQL, "slug TEXT NOT NULL UNIQUE") {
+		return nil // already migrated
+	}
+
+	// Recreate the table without the column-level UNIQUE constraint.
+	// IMPORTANT: preserve existing password_hash values instead of blanking them.
 	_, err = s.db.Exec(`
 		CREATE TABLE tenants_new (
 			id TEXT PRIMARY KEY,
 			email TEXT NOT NULL,
 			slug TEXT NOT NULL,
 			api_key TEXT NOT NULL,
+			password_hash TEXT NOT NULL DEFAULT '',
 			status TEXT NOT NULL DEFAULT 'trial',
 			stripe_customer_id TEXT NOT NULL DEFAULT '',
 			stripe_sub_id TEXT NOT NULL DEFAULT '',
@@ -97,7 +106,7 @@ func (s *Store) migrateDropSlugUnique() error {
 			updated_at TEXT NOT NULL,
 			suspended_at TEXT
 		);
-		INSERT INTO tenants_new SELECT * FROM tenants;
+		INSERT INTO tenants_new SELECT id, email, slug, api_key, password_hash, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at FROM tenants;
 		DROP TABLE tenants;
 		ALTER TABLE tenants_new RENAME TO tenants;
 		CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_slug ON tenants(slug) WHERE status != 'deleted';
@@ -122,9 +131,9 @@ func (s *Store) CreateTenant(t Tenant) error {
 	}
 
 	_, err := s.db.Exec(`
-		INSERT INTO tenants (id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, t.ID, t.Email, t.Slug, t.APIKey, string(t.Status), t.StripeCustomerID, t.StripeSubID, trialEnds, t.CreatedAt.Format(time.RFC3339), t.UpdatedAt.Format(time.RFC3339), suspended)
+		INSERT INTO tenants (id, email, slug, api_key, password_hash, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, t.ID, t.Email, t.Slug, t.APIKey, t.PasswordHash, string(t.Status), t.StripeCustomerID, t.StripeSubID, trialEnds, t.CreatedAt.Format(time.RFC3339), t.UpdatedAt.Format(time.RFC3339), suspended)
 	if err != nil {
 		return fmt.Errorf("failed to create tenant: %w", err)
 	}
@@ -134,7 +143,7 @@ func (s *Store) CreateTenant(t Tenant) error {
 // GetTenant retrieves a tenant by ID.
 func (s *Store) GetTenant(id string) (*Tenant, error) {
 	row := s.db.QueryRow(`
-		SELECT id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
+		SELECT id, email, slug, api_key, password_hash, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
 		FROM tenants WHERE id = ?
 	`, id)
 	return scanTenant(row)
@@ -143,7 +152,7 @@ func (s *Store) GetTenant(id string) (*Tenant, error) {
 // GetTenantBySlug retrieves a tenant by their subdomain slug.
 func (s *Store) GetTenantBySlug(slug string) (*Tenant, error) {
 	row := s.db.QueryRow(`
-		SELECT id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
+		SELECT id, email, slug, api_key, password_hash, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
 		FROM tenants WHERE slug = ?
 	`, slug)
 	return scanTenant(row)
@@ -152,7 +161,7 @@ func (s *Store) GetTenantBySlug(slug string) (*Tenant, error) {
 // GetTenantByStripeCustomer retrieves a tenant by Stripe customer ID.
 func (s *Store) GetTenantByStripeCustomer(customerID string) (*Tenant, error) {
 	row := s.db.QueryRow(`
-		SELECT id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
+		SELECT id, email, slug, api_key, password_hash, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
 		FROM tenants WHERE stripe_customer_id = ?
 	`, customerID)
 	return scanTenant(row)
@@ -161,7 +170,7 @@ func (s *Store) GetTenantByStripeCustomer(customerID string) (*Tenant, error) {
 // GetTenantByEmail retrieves a non-deleted tenant by email.
 func (s *Store) GetTenantByEmail(email string) (*Tenant, error) {
 	row := s.db.QueryRow(`
-		SELECT id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
+		SELECT id, email, slug, api_key, password_hash, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
 		FROM tenants WHERE email = ? AND status != 'deleted'
 	`, email)
 	return scanTenant(row)
@@ -172,10 +181,10 @@ func (s *Store) ListTenants(statusFilter string) ([]Tenant, error) {
 	var query string
 	var args []interface{}
 	if statusFilter != "" {
-		query = `SELECT id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at FROM tenants WHERE status = ? ORDER BY created_at DESC`
+		query = `SELECT id, email, slug, api_key, password_hash, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at FROM tenants WHERE status = ? ORDER BY created_at DESC`
 		args = append(args, statusFilter)
 	} else {
-		query = `SELECT id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at FROM tenants WHERE status != 'deleted' ORDER BY created_at DESC`
+		query = `SELECT id, email, slug, api_key, password_hash, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at FROM tenants WHERE status != 'deleted' ORDER BY created_at DESC`
 	}
 
 	rows, err := s.db.Query(query, args...)
@@ -209,9 +218,9 @@ func (s *Store) UpdateTenant(t Tenant) error {
 	}
 
 	_, err := s.db.Exec(`
-		UPDATE tenants SET email = ?, slug = ?, api_key = ?, status = ?, stripe_customer_id = ?, stripe_sub_id = ?, trial_ends_at = ?, updated_at = ?, suspended_at = ?
+		UPDATE tenants SET email = ?, slug = ?, api_key = ?, password_hash = ?, status = ?, stripe_customer_id = ?, stripe_sub_id = ?, trial_ends_at = ?, updated_at = ?, suspended_at = ?
 		WHERE id = ?
-	`, t.Email, t.Slug, t.APIKey, string(t.Status), t.StripeCustomerID, t.StripeSubID, trialEnds, t.UpdatedAt.Format(time.RFC3339), suspended, t.ID)
+	`, t.Email, t.Slug, t.APIKey, t.PasswordHash, string(t.Status), t.StripeCustomerID, t.StripeSubID, trialEnds, t.UpdatedAt.Format(time.RFC3339), suspended, t.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update tenant: %w", err)
 	}
@@ -254,7 +263,7 @@ func scanTenant(row *sql.Row) (*Tenant, error) {
 	var trialEnds, suspended sql.NullString
 	var createdAt, updatedAt string
 
-	err := row.Scan(&t.ID, &t.Email, &t.Slug, &t.APIKey, &status, &t.StripeCustomerID, &t.StripeSubID, &trialEnds, &createdAt, &updatedAt, &suspended)
+	err := row.Scan(&t.ID, &t.Email, &t.Slug, &t.APIKey, &t.PasswordHash, &status, &t.StripeCustomerID, &t.StripeSubID, &trialEnds, &createdAt, &updatedAt, &suspended)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -282,7 +291,7 @@ func scanTenantRow(rows *sql.Rows) (*Tenant, error) {
 	var trialEnds, suspended sql.NullString
 	var createdAt, updatedAt string
 
-	err := rows.Scan(&t.ID, &t.Email, &t.Slug, &t.APIKey, &status, &t.StripeCustomerID, &t.StripeSubID, &trialEnds, &createdAt, &updatedAt, &suspended)
+	err := rows.Scan(&t.ID, &t.Email, &t.Slug, &t.APIKey, &t.PasswordHash, &status, &t.StripeCustomerID, &t.StripeSubID, &trialEnds, &createdAt, &updatedAt, &suspended)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan tenant: %w", err)
 	}

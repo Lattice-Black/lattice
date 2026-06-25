@@ -26,6 +26,7 @@ func main() {
 		AdminAPIKey:     getEnv("HOSTED_ADMIN_API_KEY", ""),
 		DBPath:          getEnv("HOSTED_DB_PATH", "/data/hosted.db"),
 		FrontendDir:     getEnv("HOSTED_FRONTEND_DIR", ""),
+		BaseDomain:      getEnv("HOSTED_BASE_DOMAIN", "lattice.black"),
 		Stripe: hosted.StripeConfig{
 			SecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
 			WebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),

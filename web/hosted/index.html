@@ -35,13 +35,6 @@
       }
       .btn:hover { opacity: 0.9; }
       .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-      .btn-secondary {
-        width: 100%; padding: 10px; background: transparent; color: #6b6b6b; border: 1px solid #1e1e1e;
-        font-size: 14px; cursor: pointer; transition: all 0.2s; margin-top: 12px;
-      }
-      .btn-secondary:hover { border-color: #4d9f5d; color: #4d9f5d; }
-      .price { text-align: center; margin: 20px 0; color: #6b6b6b; font-size: 14px; }
-      .price strong { color: #f0f0f0; }
       .error { color: #ef4444; font-size: 13px; margin-top: 6px; display: none; }
       .error.show { display: block; }
       .success { text-align: center; }
@@ -55,6 +48,8 @@
       .toggle-link a:hover { text-decoration: underline; }
       .login-result { margin-top: 16px; }
       .login-result .label { color: #6b6b6b; font-size: 13px; margin-bottom: 4px; }
+      .price { text-align: center; margin: 20px 0; color: #6b6b6b; font-size: 14px; }
+      .price strong { color: #f0f0f0; }
     </style>
   </head>
   <body>
@@ -77,26 +72,32 @@
           </div>
 
           <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="At least 8 characters" required />
+            <div class="error" id="password-error"></div>
+          </div>
+
+          <div class="form-group">
             <label for="slug">Choose your subdomain</label>
             <div class="slug-wrapper">
               <input type="text" id="slug" placeholder="acme" required style="flex:1" />
-              <span class="slug-suffix">.lattice.black</span>
+              <span class="slug-suffix" id="slug-suffix">.lattice.black</span>
             </div>
             <div class="error" id="slug-error"></div>
           </div>
 
-          <div class="price"><strong>$25/year</strong> — unlimited monitors, unlimited status pages</div>
+          <div class="price" id="price-display"><strong>$25/year</strong> — unlimited monitors, unlimited status pages</div>
 
           <button class="btn" id="submit-btn" onclick="submitSignup()">Create Account</button>
         </div>
 
-        <p class="toggle-link">Already have an account? <a onclick="showLogin()">Retrieve access</a></p>
+        <p class="toggle-link">Already have an account? <a onclick="showLogin()">Sign in</a></p>
       </div>
 
       <!-- Login Form -->
       <div id="login-form" style="display:none">
-        <h1>Retrieve your access</h1>
-        <p class="subtitle">Enter your email to get your dashboard URL and API key.</p>
+        <h1>Sign in to your account</h1>
+        <p class="subtitle">Enter your email and password to access your dashboard.</p>
 
         <div class="card">
           <div class="form-group">
@@ -105,7 +106,13 @@
             <div class="error" id="login-email-error"></div>
           </div>
 
-          <button class="btn" id="login-btn" onclick="submitLogin()">Retrieve Access</button>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Your password" required />
+            <div class="error" id="login-password-error"></div>
+          </div>
+
+          <button class="btn" id="login-btn" onclick="submitLogin()">Sign In</button>
 
           <div id="login-result" class="login-result" style="display:none">
             <div class="label">Your dashboard:</div>
@@ -144,6 +151,27 @@
     </div>
 
     <script>
+      // --- Config: fetch base domain from server ---
+      let baseDomain = 'lattice.black';
+      let priceYearly = 25;
+      let trialDays = 14;
+
+      async function loadConfig() {
+        try {
+          const res = await fetch('/api/hosted/config');
+          const data = await res.json();
+          if (data.base_domain) baseDomain = data.base_domain;
+          if (data.price_yearly) priceYearly = data.price_yearly;
+          if (data.trial_days) trialDays = data.trial_days;
+          document.getElementById('slug-suffix').textContent = '.' + baseDomain;
+          document.getElementById('price-display').innerHTML =
+            '<strong>$' + priceYearly + '/year</strong> — unlimited monitors, unlimited status pages';
+        } catch (e) {
+          // Fallback to defaults
+        }
+      }
+      loadConfig();
+
       // --- View toggling ---
       function showLogin() {
         document.getElementById('signup-form').style.display = 'none';
@@ -186,15 +214,23 @@
       // --- Signup ---
       async function submitSignup() {
         const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
         const slug = document.getElementById('slug').value;
         const btn = document.getElementById('submit-btn');
 
         document.getElementById('email-error').classList.remove('show');
+        document.getElementById('password-error').classList.remove('show');
         document.getElementById('slug-error').classList.remove('show');
 
         if (!email || !email.includes('@')) {
           const err = document.getElementById('email-error');
           err.textContent = 'Please enter a valid email';
+          err.classList.add('show');
+          return;
+        }
+        if (!password || password.length < 8) {
+          const err = document.getElementById('password-error');
+          err.textContent = 'Password must be at least 8 characters';
           err.classList.add('show');
           return;
         }
@@ -212,7 +248,7 @@
           const res = await fetch('/api/hosted/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, slug }),
+            body: JSON.stringify({ email, slug, password }),
           });
           const data = await res.json();
 
@@ -223,12 +259,15 @@
               const err = document.getElementById('email-error');
               err.textContent = data.error;
               err.classList.add('show');
-              // Show a hint to login
               const hint = document.createElement('div');
               hint.style.cssText = 'color:#4d9f5d;font-size:13px;margin-top:4px;cursor:pointer;text-decoration:underline';
-              hint.textContent = '→ Retrieve your existing account';
+              hint.textContent = '→ Sign in to your existing account';
               hint.onclick = showLogin;
               err.appendChild(hint);
+            } else if (data.error.includes('password')) {
+              const err = document.getElementById('password-error');
+              err.textContent = data.error;
+              err.classList.add('show');
             } else {
               const err = document.getElementById('slug-error');
               err.textContent = data.error;
@@ -244,12 +283,9 @@
             return;
           }
 
-          document.getElementById('signup-form').style.display = 'none';
-          document.getElementById('success-view').style.display = 'block';
-          document.getElementById('tenant-url').textContent = data.tenant_url;
-          document.getElementById('api-key').textContent = data.api_key;
-
-          setTimeout(() => { window.location.href = data.dashboard_url; }, 5000);
+          // Redirect to the tenant's login page with API key pre-filled.
+          const loginUrl = data.dashboard_url.replace('/dashboard', '/login') + '?key=' + encodeURIComponent(data.api_key);
+          window.location.href = loginUrl;
         } catch (err) {
           btn.disabled = false;
           btn.textContent = 'Create Account';
@@ -257,12 +293,14 @@
         }
       }
 
-      // --- Login / Retrieve Access ---
+      // --- Login ---
       async function submitLogin() {
         const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
         const btn = document.getElementById('login-btn');
 
         document.getElementById('login-email-error').classList.remove('show');
+        document.getElementById('login-password-error').classList.remove('show');
         document.getElementById('login-result').style.display = 'none';
 
         if (!email || !email.includes('@')) {
@@ -271,23 +309,29 @@
           err.classList.add('show');
           return;
         }
+        if (!password) {
+          const err = document.getElementById('login-password-error');
+          err.textContent = 'Please enter your password';
+          err.classList.add('show');
+          return;
+        }
 
         btn.disabled = true;
-        btn.textContent = 'Looking up...';
+        btn.textContent = 'Signing in...';
 
         try {
           const res = await fetch('/api/hosted/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({ email, password }),
           });
           const data = await res.json();
 
           btn.disabled = false;
-          btn.textContent = 'Retrieve Access';
+          btn.textContent = 'Sign In';
 
           if (!res.ok) {
-            const err = document.getElementById('login-email-error');
+            const err = document.getElementById('login-password-error');
             err.textContent = data.error || 'Something went wrong';
             err.classList.add('show');
             return;
@@ -300,24 +344,25 @@
             return;
           }
 
-          // Show results
-          document.getElementById('login-result').style.display = 'block';
-          document.getElementById('login-tenant-url').textContent = data.dashboard_url;
-          document.getElementById('login-api-key').textContent = data.api_key;
-
-          // Redirect to dashboard after 5 seconds
-          setTimeout(() => { window.location.href = data.dashboard_url; }, 5000);
+          // Redirect to the tenant's login page with API key pre-filled.
+          // The SPA Login component auto-verifies the key and navigates to /dashboard.
+          // We use /login (not /dashboard) because /dashboard requires auth and would
+          // drop the ?key= param when redirecting to /login.
+          const loginUrl = data.dashboard_url.replace('/dashboard', '/login') + '?key=' + encodeURIComponent(data.api_key);
+          window.location.href = loginUrl;
         } catch (err) {
           btn.disabled = false;
-          btn.textContent = 'Retrieve Access';
+          btn.textContent = 'Sign In';
           alert('Something went wrong. Please try again.');
         }
       }
 
       // Enter key support
       document.getElementById('email').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitSignup(); });
+      document.getElementById('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('slug').focus(); });
       document.getElementById('slug').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitSignup(); });
-      document.getElementById('login-email').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitLogin(); });
+      document.getElementById('login-email').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('login-password').focus(); });
+      document.getElementById('login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitLogin(); });
     </script>
   </body>
 </html>

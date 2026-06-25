@@ -19,14 +19,16 @@ type Provisioner struct {
 	namespace     string // namespace where tenant deployments live
 	image         string // Docker image for tenant lattice instances
 	clusterIssuer string // cert-manager cluster issuer for TLS
+	baseDomain    string // base domain for tenant ingresses (e.g. lattice.black or staging.lattice.black)
 }
 
 // NewProvisioner creates a new k8s provisioner.
-func NewProvisioner(namespace, image, clusterIssuer string) *Provisioner {
+func NewProvisioner(namespace, image, clusterIssuer, baseDomain string) *Provisioner {
 	return &Provisioner{
 		namespace:     namespace,
-		image:          image,
+		image:         image,
 		clusterIssuer:  clusterIssuer,
+		baseDomain:    baseDomain,
 	}
 }
 
@@ -106,7 +108,7 @@ func (p *Provisioner) renderManifest(name string, t Tenant) (string, error) {
 		Slug:          t.Slug,
 		Image:         p.image,
 		APIKey:        t.APIKey,
-		Host:          t.Slug + ".lattice.black",
+		Host:          t.Slug + "." + p.baseDomain,
 		ClusterIssuer: p.clusterIssuer,
 	}
 

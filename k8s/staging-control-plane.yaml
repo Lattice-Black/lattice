@@ -63,6 +63,8 @@ spec:
           value: "/data/hosted.db"
         - name: HOSTED_FRONTEND_DIR
           value: "/app/web/hosted"
+        - name: HOSTED_BASE_DOMAIN
+          value: "staging.lattice.black"
         - name: STRIPE_SECRET_KEY
           valueFrom:
             secretKeyRef:
@@ -90,13 +92,13 @@ spec:
           mountPath: /data
         readinessProbe:
           httpGet:
-            path: /api/hosted/signup
+            path: /api/hosted/health
             port: 8090
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
           httpGet:
-            path: /api/hosted/signup
+            path: /api/hosted/health
             port: 8090
           initialDelaySeconds: 10
           periodSeconds: 30

@@ -1,15 +1,47 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { setApiKey } from '../api/client'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { setApiKey, getApiKey } from '../api/client'
 import { authApi } from '../api/auth'
 import { Button } from '../components/Button'
 import { Input } from '../components/Input'
 
 export function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Auto-login if API key is passed via URL param (?key=...)
+  // This is used by the hosted control plane to redirect users
+  // to their tenant dashboard with credentials pre-filled.
+  useEffect(() => {
+    const keyFromUrl = searchParams.get('key')
+    const existingKey = getApiKey()
+
+    if (keyFromUrl) {
+      // Verify the key from URL and auto-login
+      setIsLoading(true)
+      authApi.verifyApiKey(keyFromUrl)
+        .then(() => {
+          setApiKey(keyFromUrl)
+          navigate('/dashboard')
+        })
+        .catch(() => {
+          setError('The provided API key is invalid for this instance.')
+          setIsLoading(false)
+        })
+    } else if (existingKey) {
+      // Already have a key — verify and redirect
+      setIsLoading(true)
+      authApi.verifyApiKey(existingKey)
+        .then(() => navigate('/dashboard'))
+        .catch(() => {
+          setApiKeyInput(existingKey)
+          setIsLoading(false)
+        })
+    }
+  }, [searchParams, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,7 +79,7 @@ export function Login() {
             value={apiKeyInput}
             onChange={(e) => setApiKeyInput(e.target.value)}
             error={error}
-            autoFocus
+            autoFocus={!isLoading}
           />
 
           <Button

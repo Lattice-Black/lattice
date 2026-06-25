@@ -107,6 +107,15 @@ func (s *Server) setupRoutes() {
 	r.Handle("/login", appHandler)
 	r.Handle("/login/*", appHandler)
 
+	// Shared static assets (/assets/*) — both the marketing site and the
+	// dashboard app emit build artifacts to /assets/ with content-hashed
+	// filenames, so there is no collision. This handler tries the app FS
+	// first, then falls back to the site FS.
+	r.Handle("/assets/*", serveStaticFromFSes(
+		fsItem{fsys: web.AppFS, subdir: "app"},
+		fsItem{fsys: web.SiteFS, subdir: "site"},
+	))
+
 	// Serve marketing site at root (catch-all for everything else)
 	r.Handle("/*", serveSPA(web.SiteFS, "site"))
 }
@@ -153,6 +162,42 @@ func serveSPA(fsys fs.FS, subdir string) http.Handler {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(content)
+	})
+}
+
+// fsItem pairs an embedded filesystem with its top-level subdirectory.
+type fsItem struct {
+	fsys  fs.FS
+	subdir string
+}
+
+// serveStaticFromFSes returns an http.Handler that tries to serve a static
+// file from one of several embedded filesystems (in order). Unlike
+// serveSPA it does NOT fall back to index.html — if the file is not found
+// in any FS it returns a 404.
+func serveStaticFromFSes(items ...fsItem) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		urlPath := strings.TrimPrefix(r.URL.Path, "/")
+
+		for _, item := range items {
+			filePath := path.Join(item.subdir, urlPath)
+			file, err := item.fsys.Open(filePath)
+			if err != nil {
+				continue
+			}
+			stat, err := file.Stat()
+			if err != nil || stat.IsDir() {
+				file.Close()
+				continue
+			}
+			contentType := getContentType(filePath)
+			w.Header().Set("Content-Type", contentType)
+			http.ServeContent(w, r, stat.Name(), stat.ModTime(), file.(io.ReadSeeker))
+			file.Close()
+			return
+		}
+
+		http.NotFound(w, r)
 	})
 }
 
