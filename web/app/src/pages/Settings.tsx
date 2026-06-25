@@ -16,6 +16,7 @@ export function Settings() {
     custom_css: '',
   })
   const [saved, setSaved] = useState(false)
+  const [keyCopied, setKeyCopied] = useState(false)
 
   useEffect(() => {
     if (settings) {
@@ -55,7 +56,6 @@ export function Settings() {
   }
 
   const apiKey = getApiKey()
-  const [keyCopied, setKeyCopied] = useState(false)
 
   const copyApiKey = () => {
     if (apiKey) {
