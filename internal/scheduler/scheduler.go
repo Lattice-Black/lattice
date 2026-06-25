@@ -24,6 +24,7 @@ type Scheduler struct {
 	store         store.Store
 	effectHandler EffectHandler
 	retentionDays int
+	ctx           context.Context // long-lived context for monitor runners
 
 	mu       sync.RWMutex
 	state    *reducer.State
@@ -159,6 +160,8 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	s.ctx = ctx
+
 	for _, m := range s.state.Monitors {
 		if m.Enabled {
 			s.startMonitor(ctx, m)
@@ -205,7 +208,9 @@ func (s *Scheduler) Stop() {
 }
 
 // AddMonitor adds a new monitor to the scheduler.
-func (s *Scheduler) AddMonitor(ctx context.Context, m reducer.Monitor) {
+// It uses the scheduler's long-lived context (from Start) rather than the
+// request context, which would be cancelled when the HTTP response is sent.
+func (s *Scheduler) AddMonitor(_ context.Context, m reducer.Monitor) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -216,7 +221,7 @@ func (s *Scheduler) AddMonitor(ctx context.Context, m reducer.Monitor) {
 	}
 
 	if m.Enabled {
-		s.startMonitor(ctx, m)
+		s.startMonitor(s.ctx, m)
 	}
 }
 
@@ -232,8 +237,8 @@ func (s *Scheduler) RemoveMonitor(id string) {
 }
 
 // UpdateMonitor updates a monitor's configuration.
-func (s *Scheduler) UpdateMonitor(ctx context.Context, m reducer.Monitor) {
-	s.AddMonitor(ctx, m) // AddMonitor handles stopping the old runner
+func (s *Scheduler) UpdateMonitor(_ context.Context, m reducer.Monitor) {
+	s.AddMonitor(nil, m) // AddMonitor handles stopping the old runner
 }
 
 // Dispatch processes an action through the reducer and handles effects.
