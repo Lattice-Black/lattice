@@ -21,7 +21,7 @@ const plans: Plan[] = [
     description: 'Run Lattice on your own infrastructure. Full control, zero cost.',
     features: [
       { text: 'Unlimited monitors', included: true },
-      { text: 'Unlimited status pages', included: true },
+      { text: 'Status page included', included: true },
       { text: '90-day history', included: true },
       { text: 'All notification channels', included: true },
       { text: 'Incident management', included: true },
@@ -38,7 +38,7 @@ const plans: Plan[] = [
     description: 'We run Lattice for you. Zero maintenance, instant setup.',
     features: [
       { text: 'Unlimited monitors', included: true },
-      { text: 'Unlimited status pages', included: true },
+      { text: 'Status page included', included: true },
       { text: '90-day history', included: true },
       { text: 'All notification channels', included: true },
       { text: 'Incident management', included: true },

@@ -275,7 +275,7 @@ export function TenantDetail() {
                       Open Dashboard <span className="text-xs">↗</span>
                     </a>
                     <a
-                      href={tenantKey.dashboard_url + '/login?key=' + tenantKey.api_key}
+                      href={tenantKey.login_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1.5 text-sm border border-border text-text-secondary rounded hover:bg-background"

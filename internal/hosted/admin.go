@@ -447,7 +447,7 @@ func (s *Server) handleGetTenantKey(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, map[string]string{
 		"api_key":       tenant.APIKey,
 		"dashboard_url": tenant.DashboardURL(s.cfg.BaseDomain),
-		"login_url":     tenant.DashboardURL(s.cfg.BaseDomain) + "/login?key=" + tenant.APIKey,
+		"login_url":     "https://" + tenant.Slug + "." + s.cfg.BaseDomain + "/login?key=" + tenant.APIKey,
 	})
 }
 

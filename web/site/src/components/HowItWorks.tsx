@@ -1,15 +1,20 @@
 import CopyButton from './CopyButton'
 
-const dockerCommand = 'docker run -p 8080:8080 ghcr.io/lattice-black/lattice'
+const dockerCommand = `docker run -d -p 8080:8080 \\
+  -e LATTICE_API_KEY=your-secret \\
+  -v lattice-data:/data \\
+  ghcr.io/lattice-black/lattice`
+const dockerCommandCopy = 'docker run -d -p 8080:8080 -e LATTICE_API_KEY=your-secret -v lattice-data:/data ghcr.io/lattice-black/lattice'
 
 const yamlConfig = `monitors:
   - name: API Server
     url: https://api.example.com/health
+    type: https
     interval: 30s
 
   - name: Database
+    url: db.internal:5432
     type: tcp
-    host: db.internal:5432
     interval: 60s`
 
 interface StepProps {
@@ -47,11 +52,11 @@ export default function HowItWorks() {
             <p className="text-text-body text-sm mb-4">
               One command. No database to install, no Redis, no external services.
             </p>
-            <div className="bg-background border border-border p-3 flex items-center justify-between gap-2">
-              <code className="text-xs text-accent font-mono overflow-x-auto whitespace-nowrap">
+            <div className="bg-background border border-border p-3 flex items-start justify-between gap-2">
+              <code className="text-xs text-accent font-mono overflow-x-auto whitespace-pre">
                 {dockerCommand}
               </code>
-              <CopyButton text={dockerCommand} />
+              <CopyButton text={dockerCommandCopy} />
             </div>
           </Step>
 
@@ -77,7 +82,7 @@ export default function HowItWorks() {
               </code>
             </div>
             <p className="text-xs text-text-secondary mt-3">
-              Incidents, notifications, and 90-day history included.
+              Visit <code className="text-accent">localhost:8080/login</code> and enter your API key to access the dashboard.
             </p>
           </Step>
         </div>

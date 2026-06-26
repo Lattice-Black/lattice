@@ -181,11 +181,7 @@ export default function StatusPreview() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="w-1 h-1 bg-accent" />
-                Custom domain support
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="w-1 h-1 bg-accent" />
-                Optional password protection
+                Custom branding (name, colors, CSS)
               </li>
             </ul>
           </div>
