@@ -8,7 +8,7 @@ interface MonitorCardProps {
 }
 
 export function MonitorCard({ monitor }: MonitorCardProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
 
   return (
     <div className="border border-border rounded bg-surface">

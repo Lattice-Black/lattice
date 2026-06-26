@@ -28,6 +28,8 @@ function formatDate(dateStr: string): string {
 }
 
 export function UptimeBars({ history, height = 32 }: UptimeBarsProps) {
+  // Defensive guard: history may be null from the API when no checks exist yet
+  const safeHistory = history ?? []
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
 
@@ -39,7 +41,7 @@ export function UptimeBars({ history, height = 32 }: UptimeBarsProps) {
     date.setDate(date.getDate() - i)
     const dateStr = date.toISOString().split('T')[0]
 
-    const dayData = history.find(h => h.date === dateStr)
+    const dayData = safeHistory.find(h => h.date === dateStr)
     days.push(
       dayData || {
         date: dateStr,

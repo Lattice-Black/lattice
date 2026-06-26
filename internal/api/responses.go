@@ -226,7 +226,11 @@ func (s *Server) handleGetStatus(w http.ResponseWriter, r *http.Request) {
 		// Get 90-day history
 		history, err := s.store.GetDailyHistory(m.ID, 90)
 		if err == nil {
-			sm.History = history
+			if history != nil {
+				sm.History = history
+			} else {
+				sm.History = []store.DailyHistory{}
+			}
 			// Calculate uptime percentage
 			if len(history) > 0 {
 				totalUp := 0.0
