@@ -427,6 +427,30 @@ func (s *Server) handleDeleteAdminUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// --- Tenant Access Handler ---
+
+// handleGetTenantKey returns the tenant's API key so an admin can access
+// the tenant's dashboard directly. This is a super_admin only operation.
+func (s *Server) handleGetTenantKey(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	tenant, err := s.store.GetTenant(id)
+	if err != nil {
+		InternalError(w, "failed to get tenant")
+		return
+	}
+	if tenant == nil {
+		NotFound(w)
+		return
+	}
+
+	s.audit(r, "tenant.view_key", "tenant", id, "slug="+tenant.Slug)
+	JSON(w, 200, map[string]string{
+		"api_key":       tenant.APIKey,
+		"dashboard_url": tenant.DashboardURL(s.cfg.BaseDomain),
+		"login_url":     tenant.DashboardURL(s.cfg.BaseDomain) + "/login?key=" + tenant.APIKey,
+	})
+}
+
 // --- Audit Log Handler ---
 
 func (s *Server) handleListAuditLogs(w http.ResponseWriter, r *http.Request) {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { tenantsApi, Tenant } from '../api/tenants'
+import { tenantsApi, Tenant, TenantKeyResponse } from '../api/tenants'
 
 function formatDate(s: string): string {
   return new Date(s).toLocaleString('en-US', {
@@ -85,6 +85,19 @@ export function TenantDetail() {
       queryClient.invalidateQueries({ queryKey: ['tenant', id] })
       setActionResult(`Trial extended to ${formatDate(data.trial_ends_at)}`)
       setShowResult(true)
+    },
+  })
+
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [tenantKey, setTenantKey] = useState<TenantKeyResponse | null>(null)
+
+  const getApiKeyMutation = useMutation({
+    mutationFn: () => tenantsApi.getApiKey(id!),
+    onSuccess: (data) => {
+      setTenantKey(data)
+      setShowApiKey(true)
+      setActionResult('')
+      setShowResult(false)
     },
   })
 
@@ -243,6 +256,59 @@ export function TenantDetail() {
         <div className="border border-border rounded p-5 bg-surface">
           <h2 className="text-sm font-medium text-text-secondary mb-4">Actions</h2>
           <div className="space-y-4">
+            {/* Open Tenant Dashboard */}
+            <div>
+              <div className="text-xs text-text-muted mb-1">Access the tenant's dashboard directly to manage their monitors, incidents, notifications, and settings.</div>
+              {showApiKey && tenantKey ? (
+                <div className="space-y-2">
+                  <div className="p-3 bg-background border border-border rounded">
+                    <div className="text-xs text-text-muted mb-1">API Key</div>
+                    <div className="font-mono text-sm text-text-primary break-all">{tenantKey.api_key}</div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <a
+                      href={tenantKey.login_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-sm bg-accent text-background rounded hover:bg-accent-hover inline-flex items-center gap-1"
+                    >
+                      Open Dashboard <span className="text-xs">↗</span>
+                    </a>
+                    <a
+                      href={tenantKey.dashboard_url + '/login?key=' + tenantKey.api_key}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-sm border border-border text-text-secondary rounded hover:bg-background"
+                    >
+                      Auto-Login Link
+                    </a>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(tenantKey.api_key); }}
+                      className="px-3 py-1.5 text-sm border border-border text-text-secondary rounded hover:bg-background"
+                    >
+                      Copy Key
+                    </button>
+                    <button
+                      onClick={() => setShowApiKey(false)}
+                      className="px-3 py-1.5 text-sm border border-border text-text-secondary rounded hover:bg-background"
+                    >
+                      Hide
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => getApiKeyMutation.mutate()}
+                  disabled={getApiKeyMutation.isPending}
+                  className="px-3 py-1.5 text-sm bg-accent/10 text-accent border border-accent/30 rounded hover:bg-accent/20"
+                >
+                  {getApiKeyMutation.isPending ? 'Loading...' : 'Reveal API Key & Open Dashboard'}
+                </button>
+              )}
+            </div>
+
+            <div className="border-t border-border pt-4" />
+
             {/* Reset API key */}
             <div>
               <div className="text-xs text-text-muted mb-1">Regenerate API key for this tenant. They will need the new key to access their dashboard.</div>

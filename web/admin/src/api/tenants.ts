@@ -33,6 +33,12 @@ export interface ExtendTrialResponse {
   trial_ends_at: string
 }
 
+export interface TenantKeyResponse {
+  api_key: string
+  dashboard_url: string
+  login_url: string
+}
+
 export interface AuditLog {
   id: string
   admin_id: string
@@ -71,6 +77,9 @@ export const tenantsApi = {
 
   extendTrial: (id: string, data: ExtendTrialRequest) =>
     api.post<ExtendTrialResponse>(`/api/hosted/tenants/${id}/extend-trial`, data),
+
+  getApiKey: (id: string) =>
+    api.get<TenantKeyResponse>(`/api/hosted/tenants/${id}/api-key`),
 
   listAuditLogs: (limit?: number, offset?: number) =>
     api.get<AuditLog[]>(`/api/hosted/admin/audit` + 

@@ -148,6 +148,12 @@ func (s *Server) setupRoutes() {
 		r.Post("/api/hosted/tenants/{id}/reset-key", s.handleResetTenantKey)
 		r.Post("/api/hosted/tenants/{id}/reset-password", s.handleResetTenantPassword)
 		r.Post("/api/hosted/tenants/{id}/extend-trial", s.handleExtendTenantTrial)
+
+		// Tenant access (super_admin only) — view API key to access tenant dashboard
+		r.Group(func(r chi.Router) {
+			r.Use(s.requireSuperAdmin)
+			r.Get("/api/hosted/tenants/{id}/api-key", s.handleGetTenantKey)
+		})
 	})
 
 	// Serve the admin SPA at /admin/*
