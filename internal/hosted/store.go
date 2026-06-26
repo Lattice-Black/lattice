@@ -26,6 +26,12 @@ func NewStore(dbPath string) (*Store, error) {
 		return nil, fmt.Errorf("failed to ping hosted database: %w", err)
 	}
 
+	// Enable WAL mode for better concurrent performance
+	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to enable WAL mode: %w", err)
+	}
+
 	s := &Store{db: db}
 	if err := s.migrate(); err != nil {
 		db.Close()
@@ -68,6 +74,10 @@ func (s *Store) migrate() error {
 	// Migrate from old schema: if the table was created with `slug TEXT NOT NULL UNIQUE`,
 	// the column-level UNIQUE constraint prevents slug reuse after soft-delete.
 	// We recreate the table without it and rely on the partial unique index instead.
+	if err := s.migrateAdminTables(); err != nil {
+		return fmt.Errorf("failed to migrate admin tables: %w", err)
+	}
+
 	return s.migrateDropSlugUnique()
 }
 

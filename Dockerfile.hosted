@@ -1,6 +1,16 @@
 # Dockerfile for the hosted control plane
-# Builds the hosted binary and serves the signup page
+# Builds the hosted binary, admin SPA, and serves the signup page
 
+# Stage 1: Build admin frontend
+FROM node:20-bookworm AS admin-builder
+
+WORKDIR /web/admin
+COPY web/admin/package.json web/admin/package-lock.json* ./
+RUN npm install
+COPY web/admin/ ./
+RUN npm run build
+
+# Stage 2: Build Go binary
 FROM golang:1.22-bookworm AS go-builder
 
 WORKDIR /build
@@ -20,7 +30,7 @@ RUN mkdir -p internal/web/site internal/web/app && \
 
 RUN CGO_ENABLED=1 go build -ldflags="-s -w" -o hosted ./cmd/hosted
 
-# Stage 2: Runtime
+# Stage 3: Runtime
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -31,13 +41,14 @@ RUN curl -fsSL "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl" -o /u
     chmod +x /usr/local/bin/kubectl
 
 RUN useradd -r -u 1000 -s /bin/false lattice
-RUN mkdir -p /data /app/web
+RUN mkdir -p /data /app/web/hosted /app/web/admin
 RUN chown lattice:lattice /data /app
 
 WORKDIR /app
 
 COPY --from=go-builder /build/hosted .
 COPY web/hosted/ ./web/hosted/
+COPY --from=admin-builder /web/admin/dist/ ./web/admin/
 
 RUN chown -R lattice:lattice /app
 

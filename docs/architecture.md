@@ -110,15 +110,18 @@ A separate Go binary that manages the hosted SaaS offering:
 - **Signup page** — static HTML at `/`, served from `web/hosted/`
 - **Public API** — signup, slug check, login/retrieve access
 - **Stripe webhooks** — checkout completed, subscription lifecycle
-- **Admin API** — tenant CRUD, suspend/activate (requires admin API key)
-- **SQLite tenant DB** — stored at `/data/hosted.db`
+- **Admin SPA** — React app at `/admin/*`, served from `web/admin/dist/`
+- **Admin API** — tenant management, admin user management, audit log (session-based auth + API key fallback)
+- **SQLite tenant DB** — stored at `/data/hosted.db` (tenants, admin_users, admin_sessions, audit_logs)
 
 #### Hosted Packages
 
 | Package | Responsibility |
 |---------|---------------|
-| `internal/hosted/server` | Chi router, HTTP handlers for all endpoints |
+| `internal/hosted/server` | Chi router, HTTP handlers for all endpoints. Session-based admin auth, bootstrap admin. |
 | `internal/hosted/store` | SQLite persistence for tenants. Partial unique index on slug. Auto-migration. |
+| `internal/hosted/admin` | Admin auth (session cookies + API key fallback), admin user management, audit logging, enhanced tenant handlers. |
+| `internal/hosted/admin_store` | Admin users, sessions, audit log DB operations (methods on Store). |
 | `internal/hosted/provisioner` | Renders K8s manifests and applies them via `kubectl`. Per-tenant deployment + service + ingress + PVC. |
 | `internal/hosted/stripe` | Stripe API client (direct HTTP, no SDK). Checkout sessions, webhook verification, subscription lifecycle. |
 | `internal/hosted/types` | Tenant, SignupRequest, SignupResponse structs. |
@@ -130,6 +133,7 @@ A separate Go binary that manages the hosted SaaS offering:
 | Marketing site | `web/site/` | `lattice` binary via `embed.FS` | `/` |
 | Admin dashboard | `web/app/` | `lattice` binary via `embed.FS` | `/dashboard/*`, `/status`, `/login` |
 | Hosted signup | `web/hosted/` | `hosted` binary via `http.FileServer` | `/` (signup), `/success.html` |
+| Admin control plane | `web/admin/` | `hosted` binary via `http.FileServer` | `/admin/*` (admin SPA) |
 
 The marketing site and dashboard are **embedded** into the `lattice` binary at build time using `go:embed`. The hosted signup page is served from disk (simpler, no build step needed).
 
@@ -149,12 +153,21 @@ Managed by `internal/store/migrations.go`. Tables:
 
 ### Hosted Control Plane (`hosted.db`)
 
-Managed by `internal/hosted/store.go`. Single table:
+Managed by `internal/hosted/store.go`. Tables:
 
 - **tenants** — id, email, slug, api_key, status, stripe_customer_id, stripe_sub_id, trial_ends_at, created_at, updated_at, suspended_at
   - Partial unique index: `slug` must be unique `WHERE status != 'deleted'`
   - Soft-delete: `status` set to `'deleted'`, row retained
   - `GetTenantByEmail` and `SlugExists` both exclude deleted tenants
+- **admin_users** — id, email, password_hash, role (super_admin/admin), created_at, updated_at, last_login_at
+  - Unique index on email
+  - Passwords hashed with bcrypt
+- **admin_sessions** — token, admin_id, expires_at, created_at, ip
+  - FK to admin_users with ON DELETE CASCADE
+  - Sessions are DB-backed (revocable, not JWT)
+  - 24-hour expiry with sliding renewal
+- **audit_logs** — id, admin_id, admin_email, action, target_type, target_id, details, created_at
+  - Records every state-changing admin action for compliance
 
 ## Kubernetes Deployment
 

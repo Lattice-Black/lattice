@@ -1,7 +1,6 @@
 package api
 
 import (
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -115,10 +114,4 @@ func CORS(origins []string) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-// CloseRead is a helper to drain and close the body for safety.
-func CloseRead(body io.ReadCloser) {
-	io.Copy(io.Discard, body)
-	body.Close()
 }

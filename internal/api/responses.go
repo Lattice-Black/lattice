@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -1083,8 +1082,27 @@ func (s *Server) handleTestNotification(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// TODO: Implement actual test notification dispatch through the registry
-	// For now, return success
+	// Build a test notification and send it through the registry
+	// by dispatching a fake SendNotification effect.
+	sn := reducer.SendNotification{
+		ChannelID: id,
+		Title:     "Lattice Test Notification",
+		Message:   "This is a test notification from Lattice. If you received this, your notification channel is configured correctly.",
+		Severity:  reducer.SeverityMinor,
+	}
+
+	// Use the scheduler's effect handler if available
+	if s.scheduler.HasEffectHandler() {
+		if err := s.scheduler.HandleEffect(r.Context(), sn); err != nil {
+			JSON(w, http.StatusOK, map[string]interface{}{"success": false, "error": err.Error()})
+			return
+		}
+	} else {
+		// No effect handler registered (e.g. running without notification dispatchers)
+		JSON(w, http.StatusOK, map[string]interface{}{"success": false, "error": "no notification dispatcher configured"})
+		return
+	}
+
 	JSON(w, http.StatusOK, map[string]bool{"success": true})
 }
 
@@ -1206,7 +1224,7 @@ func (s *Server) handleGetMaintenance(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleUpdateMaintenance(w http.ResponseWriter, r *http.Request) {
 	// Maintenance windows are immutable once created in the current model.
 	// Delete and recreate if changes are needed.
-	NotFound(w)
+	Error(w, http.StatusMethodNotAllowed, "maintenance windows are immutable; delete and recreate")
 }
 
 func (s *Server) handleDeleteMaintenance(w http.ResponseWriter, r *http.Request) {
@@ -1262,7 +1280,7 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
 		CustomDomain: req.CustomDomain,
 	}
 
-	if err := s.scheduler.Dispatch(context.Background(), action); err != nil {
+	if err := s.scheduler.Dispatch(r.Context(), action); err != nil {
 		InternalError(w, err.Error())
 		return
 	}

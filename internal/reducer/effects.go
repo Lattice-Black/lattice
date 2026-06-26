@@ -15,20 +15,18 @@ type PersistState struct {
 func (e PersistState) EffectType() string { return "PERSIST_STATE" }
 
 // SendNotification tells the runtime to send a notification.
+// Config and ChannelType are populated by the scheduler before dispatching
+// so the registry doesn't need to read from the shared state (avoiding a race).
 type SendNotification struct {
-	ChannelID string
-	Title     string
-	Message   string
-	Severity  Severity
-	MonitorID string
+	ChannelID   string
+	ChannelType NotificationChannelType // populated by scheduler
+	Config      map[string]string       // snapshot populated by scheduler
+	Title       string
+	Message     string
+	Severity    Severity
+	MonitorID   string
 }
 
 func (e SendNotification) EffectType() string { return "SEND_NOTIFICATION" }
 
-// PruneOldChecks tells the runtime to delete checks older than the retention period.
-type PruneOldChecks struct {
-	MonitorID    string
-	RetentionDays int
-}
 
-func (e PruneOldChecks) EffectType() string { return "PRUNE_OLD_CHECKS" }

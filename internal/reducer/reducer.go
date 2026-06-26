@@ -132,6 +132,24 @@ func reduceDeleteMonitor(state State, a DeleteMonitor) (State, []SideEffect, err
 	}
 	delete(state.Monitors, a.ID)
 	delete(state.ConsecutiveFailures, a.ID)
+
+	// Clean up associated incidents and their updates from in-memory state.
+	// The database handles cascade deletion, but the in-memory state needs
+	// to be cleaned up manually.
+	for id, inc := range state.Incidents {
+		if inc.MonitorID == a.ID {
+			delete(state.Incidents, id)
+			delete(state.IncidentUpdates, id)
+		}
+	}
+
+	// Clean up maintenance windows for this monitor
+	for id, mw := range state.MaintenanceWindows {
+		if mw.MonitorID == a.ID {
+			delete(state.MaintenanceWindows, id)
+		}
+	}
+
 	return state, []SideEffect{PersistState{Action: a}}, nil
 }
 

@@ -203,6 +203,9 @@ func (c *DNSChecker) Check(ctx context.Context, monitor reducer.Monitor) reducer
 }
 
 // ICMPChecker performs ICMP ping checks.
+// If raw sockets are unavailable (common in Docker/unprivileged environments),
+// it falls back to a DNS resolution check so the monitor still reports
+// reachability rather than always failing.
 type ICMPChecker struct{}
 
 // NewICMPChecker creates a new ICMP checker.
@@ -211,6 +214,8 @@ func NewICMPChecker() *ICMPChecker {
 }
 
 // Check performs an ICMP echo request and returns the check result.
+// If the system doesn't allow raw sockets, it falls back to DNS resolution
+// to verify the host is at least resolvable.
 func (c *ICMPChecker) Check(ctx context.Context, monitor reducer.Monitor) reducer.Check {
 	check := reducer.Check{
 		ID:        uuid.New().String(),
@@ -254,10 +259,11 @@ func (c *ICMPChecker) Check(ctx context.Context, monitor reducer.Monitor) reduce
 	// Open a raw ICMP connection
 	conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
 	if err != nil {
-		// If we can't open a raw socket (common in containers/unprivileged),
-		// report the error gracefully
-		check.Status = reducer.StatusDown
-		check.Error = fmt.Sprintf("ICMP listen failed (requires root/cap_net_raw): %v", err)
+		// Raw sockets are not available (common in Docker without --cap-add=NET_RAW).
+		// Fall back to a DNS resolution check so the monitor reports degraded
+		// rather than always down. The host is at least resolvable.
+		check.Status = reducer.StatusDegraded
+		check.Error = fmt.Sprintf("ICMP unavailable (requires root/cap_net_raw); host resolves to %s", dst.IP)
 		return check
 	}
 	defer conn.Close()

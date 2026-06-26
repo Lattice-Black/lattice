@@ -54,7 +54,7 @@ function MonitorForm({ monitor, onSubmit, onCancel, isLoading }: MonitorFormProp
       type: formData.type as 'http' | 'https' | 'tcp' | 'dns' | 'icmp',
       interval: parseInt(formData.interval),
       timeout: parseInt(formData.timeout),
-      expected_status: formData.type === 'http' ? parseInt(formData.expected_status) : undefined,
+      expected_status: (formData.type === 'http' || formData.type === 'https') ? parseInt(formData.expected_status) : undefined,
       group: formData.group || undefined,
     })
   }
@@ -100,7 +100,7 @@ function MonitorForm({ monitor, onSubmit, onCancel, isLoading }: MonitorFormProp
         max={120}
       />
 
-      {formData.type === 'http' && (
+      {(formData.type === 'http' || formData.type === 'https') && (
         <Input
           label="Expected Status Code"
           type="number"

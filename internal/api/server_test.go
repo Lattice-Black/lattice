@@ -713,3 +713,18 @@ func TestCORS(t *testing.T) {
 
 // Ensure reducer types are referenced to prevent unused import errors
 var _ reducer.Status
+
+func TestTestNotification_NoDispatcher(t *testing.T) {
+	server, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// Try to test a notification channel that doesn't exist
+	req := httptest.NewRequest(http.MethodPost, "/api/notifications/nonexistent/test", nil)
+	req.Header.Set("X-API-Key", testAPIKey)
+	w := httptest.NewRecorder()
+
+	server.Handler().ServeHTTP(w, req)
+
+	// Channel doesn't exist → 404
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}

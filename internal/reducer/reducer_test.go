@@ -297,6 +297,27 @@ func TestNotificationChannel(t *testing.T) {
 	assert.Len(t, newState.NotificationChannels, 0)
 }
 
+func TestDeleteMonitor_CleansUpIncidentsAndMaintenance(t *testing.T) {
+	state := NewState()
+	state.Monitors["mon-1"] = Monitor{ID: "mon-1", Name: "API"}
+	state.ConsecutiveFailures["mon-1"] = 5
+
+	// Add an incident for this monitor
+	state.Incidents["inc-1"] = Incident{ID: "inc-1", MonitorID: "mon-1", Title: "Outage"}
+	state.IncidentUpdates["inc-1"] = []IncidentUpdate{{ID: "inc-1-0", IncidentID: "inc-1"}}
+
+	// Add a maintenance window for this monitor
+	state.MaintenanceWindows["mw-1"] = MaintenanceWindow{ID: "mw-1", MonitorID: "mon-1"}
+
+	newState, _, err := Reduce(state, DeleteMonitor{ID: "mon-1"})
+	require.NoError(t, err)
+	assert.Len(t, newState.Monitors, 0)
+	assert.NotContains(t, newState.ConsecutiveFailures, "mon-1")
+	assert.Len(t, newState.Incidents, 0, "incidents should be cleaned up")
+	assert.Len(t, newState.IncidentUpdates, 0, "incident updates should be cleaned up")
+	assert.Len(t, newState.MaintenanceWindows, 0, "maintenance windows should be cleaned up")
+}
+
 func TestReducer_UnknownAction(t *testing.T) {
 	state := NewState()
 	_, _, err := Reduce(state, unknownAction{})

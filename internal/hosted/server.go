@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -17,14 +19,19 @@ import (
 
 // Config holds the hosted control plane configuration.
 type Config struct {
-	ListenAddr      string
-	TenantNamespace string
-	TenantImage     string
-	ClusterIssuer   string
-	AdminAPIKey     string
-	DBPath          string
-	FrontendDir     string // path to the hosted frontend (signup page)
-	BaseDomain      string // base domain for tenant URLs (e.g. "lattice.black" or "staging.lattice.black")
+	ListenAddr          string
+	TenantNamespace     string
+	TenantImage         string
+	ClusterIssuer       string
+	AdminAPIKey         string // API key for automation/CI admin access
+	DBPath              string
+	FrontendDir         string // path to the hosted frontend (signup page)
+	AdminFrontendDir    string // path to the admin SPA build
+	BaseDomain          string // base domain for tenant URLs (e.g. "lattice.black" or "staging.lattice.black")
+
+	// Bootstrap admin: if set and no admin users exist, create a super_admin
+	BootstrapAdminEmail    string
+	BootstrapAdminPassword string
 
 	Stripe StripeConfig
 }
@@ -70,33 +77,87 @@ func NewServer(cfg Config) (*Server, error) {
 	}
 
 	s.setupRoutes()
+
+	// Bootstrap the first admin user if configured
+	if err := s.bootstrapAdmin(); err != nil {
+		log.Printf("Warning: failed to bootstrap admin: %v", err)
+	}
+
+	// Clean expired sessions on startup
+	if n, err := store.CleanExpiredSessions(); err != nil {
+		log.Printf("Warning: failed to clean expired sessions: %v", err)
+	} else if n > 0 {
+		log.Printf("Cleaned %d expired admin sessions", n)
+	}
+
 	return s, nil
 }
 
 func (s *Server) setupRoutes() {
 	r := s.router
 
+	// Auth rate limiter: 10 requests per minute per IP for signup/login
+	authLimiter := RateLimit(10, time.Minute)
+	// Slug check rate limiter: 30 requests per minute per IP
+	slugLimiter := RateLimit(30, time.Minute)
+
 	// Public routes
 	r.Get("/api/hosted/health", s.handleHealth)      // health check for k8s probes
 	r.Get("/api/hosted/config", s.handleGetConfig)      // returns public config for frontend
-	r.Post("/api/hosted/signup", s.handleSignup)
-	r.Get("/api/hosted/check-slug/{slug}", s.handleCheckSlug)
-	r.Post("/api/hosted/login", s.handleLogin) // authenticate tenant, return URL + API key
+
+	// Rate-limited auth routes
+	r.With(authLimiter).Post("/api/hosted/signup", s.handleSignup)
+	r.With(authLimiter).Post("/api/hosted/login", s.handleLogin)
+	r.With(slugLimiter).Get("/api/hosted/check-slug/{slug}", s.handleCheckSlug)
 
 	// Stripe webhook (no auth, verified by signature)
 	r.Post("/api/hosted/stripe/webhook", s.handleStripeWebhook)
 
-	// Admin routes (require admin API key)
+	// Admin auth routes (public — login/logout)
+	r.Post("/api/hosted/admin/login", s.handleAdminLogin)
+	r.Post("/api/hosted/admin/logout", s.handleAdminLogout)
+
+	// Admin-protected routes (session cookie OR API key)
 	r.Group(func(r chi.Router) {
-		r.Use(s.adminAuth)
+		r.Use(s.adminCombinedAuth)
+
+		// Admin self-service
+		r.Get("/api/hosted/admin/me", s.handleAdminMe)
+		r.Post("/api/hosted/admin/change-password", s.handleAdminChangePassword)
+
+		// Audit log (admin+)
+		r.Get("/api/hosted/admin/audit", s.handleListAuditLogs)
+
+		// Admin user management (super_admin only)
+		r.Group(func(r chi.Router) {
+			r.Use(s.requireSuperAdmin)
+			r.Get("/api/hosted/admin/users", s.handleListAdminUsers)
+			r.Post("/api/hosted/admin/users", s.handleCreateAdminUser)
+			r.Delete("/api/hosted/admin/users/{id}", s.handleDeleteAdminUser)
+		})
+
+		// Tenant management (admin+)
 		r.Get("/api/hosted/tenants", s.handleListTenants)
 		r.Get("/api/hosted/tenants/{id}", s.handleGetTenant)
+		r.Put("/api/hosted/tenants/{id}", s.handleUpdateTenant)
 		r.Delete("/api/hosted/tenants/{id}", s.handleDeleteTenant)
 		r.Post("/api/hosted/tenants/{id}/suspend", s.handleSuspendTenant)
 		r.Post("/api/hosted/tenants/{id}/activate", s.handleActivateTenant)
+
+		// Enhanced tenant actions (admin+)
+		r.Post("/api/hosted/tenants/{id}/reset-key", s.handleResetTenantKey)
+		r.Post("/api/hosted/tenants/{id}/reset-password", s.handleResetTenantPassword)
+		r.Post("/api/hosted/tenants/{id}/extend-trial", s.handleExtendTenantTrial)
 	})
 
-	// Serve the signup frontend
+	// Serve the admin SPA at /admin/*
+	if s.cfg.AdminFrontendDir != "" {
+		adminHandler := serveAdminSPA(s.cfg.AdminFrontendDir)
+		r.Handle("/admin", adminHandler)
+		r.Handle("/admin/*", adminHandler)
+	}
+
+	// Serve the signup frontend (catch-all)
 	if s.cfg.FrontendDir != "" {
 		r.Handle("/*", http.FileServer(http.Dir(s.cfg.FrontendDir)))
 	}
@@ -108,6 +169,46 @@ func (s *Server) Handler() http.Handler { return s.router }
 // Close cleans up resources.
 func (s *Server) Close() error {
 	return s.store.Close()
+}
+
+// bootstrapAdmin creates the first super_admin user if bootstrap credentials
+// are configured and no admin users exist yet. This allows initial admin
+// access without manual DB operations.
+func (s *Server) bootstrapAdmin() error {
+	if s.cfg.BootstrapAdminEmail == "" || s.cfg.BootstrapAdminPassword == "" {
+		return nil // not configured
+	}
+
+	count, err := s.store.CountAdminUsers()
+	if err != nil {
+		return fmt.Errorf("failed to count admin users: %w", err)
+	}
+	if count > 0 {
+		return nil // admins already exist
+	}
+
+	email := strings.TrimSpace(strings.ToLower(s.cfg.BootstrapAdminEmail))
+	hash, err := bcrypt.GenerateFromPassword([]byte(s.cfg.BootstrapAdminPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash bootstrap password: %w", err)
+	}
+
+	now := time.Now().UTC()
+	admin := AdminUser{
+		ID:           generateAdminID(),
+		Email:        email,
+		PasswordHash: string(hash),
+		Role:         RoleSuperAdmin,
+		CreatedAt:    now,
+		UpdatedAt:   now,
+	}
+
+	if err := s.store.CreateAdminUser(admin); err != nil {
+		return fmt.Errorf("failed to create bootstrap admin: %w", err)
+	}
+
+	log.Printf("Bootstrapped super admin: %s", email)
+	return nil
 }
 
 // --- Public Handlers ---
@@ -403,6 +504,7 @@ func (s *Server) handleDeleteTenant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.audit(r, "tenant.delete", "tenant", id, "slug="+tenant.Slug)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -422,6 +524,7 @@ func (s *Server) handleSuspendTenant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.audit(r, "tenant.suspend", "tenant", id, "slug="+tenant.Slug)
 	JSON(w, 200, map[string]string{"status": "suspended"})
 }
 
@@ -441,29 +544,33 @@ func (s *Server) handleActivateTenant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.audit(r, "tenant.activate", "tenant", id, "slug="+tenant.Slug)
 	JSON(w, 200, map[string]string{"status": "active"})
 }
 
-// --- Middleware ---
+// --- Helpers ---
 
-func (s *Server) adminAuth(next http.Handler) http.Handler {
+// serveAdminSPA returns an http.Handler that serves the admin SPA from the
+// given directory. Static files are served directly; all other paths fall
+// back to index.html for client-side routing.
+func serveAdminSPA(dir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		key := r.Header.Get("X-API-Key")
-		if key == "" {
-			auth := r.Header.Get("Authorization")
-			if strings.HasPrefix(auth, "Bearer ") {
-				key = strings.TrimPrefix(auth, "Bearer ")
-			}
-		}
-		if key == "" || key != s.cfg.AdminAPIKey {
-			http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		// Strip the /admin prefix
+		relPath := strings.TrimPrefix(r.URL.Path, "/admin")
+		relPath = strings.TrimPrefix(relPath, "/")
+
+		// Try to serve the file directly
+		filePath := filepath.Join(dir, relPath)
+		info, err := os.Stat(filePath)
+		if err == nil && !info.IsDir() {
+			http.ServeFile(w, r, filePath)
 			return
 		}
-		next.ServeHTTP(w, r)
+
+		// Fall back to index.html for SPA routing
+		http.ServeFile(w, r, filepath.Join(dir, "index.html"))
 	})
 }
-
-// --- Helpers ---
 
 func JSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -479,6 +586,10 @@ func BadRequest(w http.ResponseWriter, msg string) {
 
 func NotFound(w http.ResponseWriter) {
 	JSON(w, 404, map[string]string{"error": "not found"})
+}
+
+func Unauthorized(w http.ResponseWriter) {
+	JSON(w, 401, map[string]string{"error": "unauthorized"})
 }
 
 func InternalError(w http.ResponseWriter, msg string) {

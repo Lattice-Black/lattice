@@ -19,14 +19,17 @@ func main() {
 	_ = configPath
 
 	cfg := hosted.Config{
-		ListenAddr:      getEnv("HOSTED_LISTEN_ADDR", ":8090"),
-		TenantNamespace: getEnv("HOSTED_NAMESPACE", "hosted-lattice"),
-		TenantImage:     getEnv("HOSTED_TENANT_IMAGE", "ghcr.io/lattice-black/lattice:latest"),
-		ClusterIssuer:   getEnv("HOSTED_CLUSTER_ISSUER", "letsencrypt-dns01"),
-		AdminAPIKey:     getEnv("HOSTED_ADMIN_API_KEY", ""),
-		DBPath:          getEnv("HOSTED_DB_PATH", "/data/hosted.db"),
-		FrontendDir:     getEnv("HOSTED_FRONTEND_DIR", ""),
-		BaseDomain:      getEnv("HOSTED_BASE_DOMAIN", "lattice.black"),
+		ListenAddr:           getEnv("HOSTED_LISTEN_ADDR", ":8090"),
+		TenantNamespace:      getEnv("HOSTED_NAMESPACE", "hosted-lattice"),
+		TenantImage:          getEnv("HOSTED_TENANT_IMAGE", "ghcr.io/lattice-black/lattice:latest"),
+		ClusterIssuer:        getEnv("HOSTED_CLUSTER_ISSUER", "letsencrypt-dns01"),
+		AdminAPIKey:          getEnv("HOSTED_ADMIN_API_KEY", ""),
+		DBPath:               getEnv("HOSTED_DB_PATH", "/data/hosted.db"),
+		FrontendDir:          getEnv("HOSTED_FRONTEND_DIR", ""),
+		AdminFrontendDir:     getEnv("HOSTED_ADMIN_FRONTEND_DIR", ""),
+		BaseDomain:           getEnv("HOSTED_BASE_DOMAIN", "lattice.black"),
+		BootstrapAdminEmail:    getEnv("HOSTED_BOOTSTRAP_ADMIN_EMAIL", ""),
+		BootstrapAdminPassword: getEnv("HOSTED_BOOTSTRAP_ADMIN_PASSWORD", ""),
 		Stripe: hosted.StripeConfig{
 			SecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
 			WebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
@@ -37,7 +40,22 @@ func main() {
 	}
 
 	if cfg.AdminAPIKey == "" {
-		log.Println("WARNING: HOSTED_ADMIN_API_KEY not set — admin routes will be inaccessible")
+		log.Println("WARNING: HOSTED_ADMIN_API_KEY not set — API key admin access will be unavailable")
+	}
+
+	if cfg.BootstrapAdminEmail == "" {
+		log.Println("INFO: HOSTED_BOOTSTRAP_ADMIN_EMAIL not set — create admin users manually or via the admin UI")
+	}
+
+	// Warn if using live Stripe keys (should use test keys in development)
+	if cfg.Stripe.SecretKey != "" {
+		if hosted.IsLiveStripeKey(cfg.Stripe.SecretKey) {
+			log.Println("WARNING: Using LIVE Stripe secret key. Ensure this is a production deployment.")
+			log.Println("WARNING: If this is a development/staging environment, use test keys (sk_test_...) instead.")
+		}
+		if cfg.Stripe.WebhookSecret == "" {
+			log.Println("WARNING: STRIPE_WEBHOOK_SECRET not set — Stripe webhooks will fail verification")
+		}
 	}
 
 	server, err := hosted.NewServer(cfg)

@@ -1,6 +1,7 @@
 package hosted
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -176,7 +177,7 @@ func (b *Billing) handleSubscriptionUpdated(data json.RawMessage) error {
 		if err := b.store.UpdateTenant(*tenant); err != nil {
 			return err
 		}
-		if err := b.provisioner.Scale(nil, tenant.Slug, 0); err != nil {
+		if err := b.provisioner.Scale(context.Background(), tenant.Slug, 0); err != nil {
 			log.Printf("Warning: failed to scale down: %v", err)
 		}
 		log.Printf("Tenant %s suspended (subscription %s)", tenant.Slug, sub.Status)
@@ -212,7 +213,7 @@ func (b *Billing) handleSubscriptionDeleted(data json.RawMessage) error {
 	if err := b.store.UpdateTenant(*tenant); err != nil {
 		return err
 	}
-	if err := b.provisioner.Scale(nil, tenant.Slug, 0); err != nil {
+	if err := b.provisioner.Scale(context.Background(), tenant.Slug, 0); err != nil {
 		log.Printf("Warning: failed to scale down: %v", err)
 	}
 
@@ -248,7 +249,7 @@ func (b *Billing) handlePaymentFailed(data json.RawMessage) error {
 		if err := b.store.UpdateTenant(*tenant); err != nil {
 			return err
 		}
-		if err := b.provisioner.Scale(nil, tenant.Slug, 0); err != nil {
+		if err := b.provisioner.Scale(context.Background(), tenant.Slug, 0); err != nil {
 			log.Printf("Warning: failed to scale down: %v", err)
 		}
 		log.Printf("Tenant %s suspended (payment failed)", tenant.Slug)

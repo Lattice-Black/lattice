@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"sync"
@@ -221,7 +222,13 @@ func (s *Scheduler) AddMonitor(_ context.Context, m reducer.Monitor) {
 	}
 
 	if m.Enabled {
-		s.startMonitor(s.ctx, m)
+		ctx := s.ctx
+		if ctx == nil {
+			// Scheduler hasn't been started yet — use background context.
+			// This allows AddMonitor to work in tests and before Start().
+			ctx = context.Background()
+		}
+		s.startMonitor(ctx, m)
 	}
 }
 
@@ -265,8 +272,27 @@ func (s *Scheduler) Dispatch(ctx context.Context, action reducer.Action) error {
 			if err := s.persistAction(e.Action); err != nil {
 				log.Printf("error persisting action %s: %v", e.Action.ActionType(), err)
 			}
+		case reducer.SendNotification:
+			// Pre-resolve channel config from the new state while we still hold the lock.
+			// This snapshots the config so the async goroutine doesn't race with
+			// the next state swap.
+			if ch, ok := newState.NotificationChannels[e.ChannelID]; ok {
+				e.ChannelType = ch.Type
+				configCopy := make(map[string]string, len(ch.Config))
+				for k, v := range ch.Config {
+					configCopy[k] = v
+				}
+				e.Config = configCopy
+			}
+			if s.effectHandler != nil {
+				go func(ef reducer.SideEffect) {
+					if err := s.effectHandler.Handle(ctx, ef); err != nil {
+						log.Printf("error handling effect %s: %v", ef.EffectType(), err)
+					}
+				}(e)
+			}
 		default:
-			// Handle notification effects asynchronously to avoid blocking
+			// Handle other effects asynchronously
 			if s.effectHandler != nil {
 				go func(ef reducer.SideEffect) {
 					if err := s.effectHandler.Handle(ctx, ef); err != nil {
@@ -427,4 +453,36 @@ func (s *Scheduler) GetState() reducer.State {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.state.Clone()
+}
+
+// HasEffectHandler returns true if an effect handler (notification dispatcher) is configured.
+func (s *Scheduler) HasEffectHandler() bool {
+	return s.effectHandler != nil
+}
+
+// HandleEffect dispatches a single side effect through the effect handler.
+// This is used by API handlers to send test notifications.
+// For SendNotification effects, it resolves the channel config from the
+// current state under the scheduler lock before dispatching.
+func (s *Scheduler) HandleEffect(ctx context.Context, effect reducer.SideEffect) error {
+	if s.effectHandler == nil {
+		return fmt.Errorf("no effect handler configured")
+	}
+
+	// If it's a SendNotification, resolve channel config under lock
+	if sn, ok := effect.(reducer.SendNotification); ok {
+		s.mu.RLock()
+		if ch, exists := s.state.NotificationChannels[sn.ChannelID]; exists {
+			sn.ChannelType = ch.Type
+			configCopy := make(map[string]string, len(ch.Config))
+			for k, v := range ch.Config {
+				configCopy[k] = v
+			}
+			sn.Config = configCopy
+		}
+		s.mu.RUnlock()
+		effect = sn
+	}
+
+	return s.effectHandler.Handle(ctx, effect)
 }

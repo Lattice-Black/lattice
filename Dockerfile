@@ -72,4 +72,8 @@ VOLUME ["/data"]
 
 ENV LATTICE_DB_PATH=/data/lattice.db
 
+# NOTE: ICMP monitoring requires raw socket privileges.
+# To enable ICMP checks, run with: --cap-add=NET_RAW
+# Without it, ICMP monitors report degraded status with a DNS fallback.
+
 CMD ["./lattice"]

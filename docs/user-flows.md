@@ -154,18 +154,92 @@ If tenant wants to come back:
 
 ## 3. Admin (Operator) Flow
 
-### Managing Tenants
+### Bootstrap (First-Time Setup)
 ```
-Admin accesses hosted.lattice.black/api/hosted/tenants
-  → Must provide X-API-Key header (admin API key from K8s secrets)
-  → Gets list of all tenants with status, email, slug
+On startup, if HOSTED_BOOTSTRAP_ADMIN_EMAIL and HOSTED_BOOTSTRAP_ADMIN_PASSWORD
+are set and no admin users exist:
+  → Create a super_admin with those credentials
+  → Log message: "Bootstrapped super admin: {email}"
 
-Actions:
-  GET    /api/hosted/tenants             → List all tenants
-  GET    /api/hosted/tenants/{id}         → View tenant details
-  DELETE /api/hosted/tenants/{id}         → Deprovision + soft-delete
-  POST   /api/hosted/tenants/{id}/suspend  → Scale to 0, mark suspended
-  POST   /api/hosted/tenants/{id}/activate → Scale to 1, mark active
+If bootstrap env vars are not set:
+  → Admin routes require API key (HOSTED_ADMIN_API_KEY) for automation/CI
+  → Admin users must be created via the admin UI (if at least one admin exists)
+  → Or directly in the SQLite DB
+```
+
+### Admin Login (Session-Based)
+```
+Admin visits hosted.lattice.black/admin
+  → Redirected to /admin/login
+  → Enters email + password
+  → POST /api/hosted/admin/login
+    → Server verifies bcrypt password hash
+    → Creates admin_session in DB (token, admin_id, expires_at, ip)
+    → Sets httpOnly, SameSite=Strict cookie (lattice_admin_session)
+    → Returns admin user profile
+  → Frontend stores admin in React state
+  → Redirected to /admin (tenant list)
+
+Session details:
+  - Cookie: lattice_admin_session (httpOnly, SameSite=Strict, Secure in prod)
+  - Duration: 24 hours with sliding renewal (extended on each request)
+  - Revocable: logout deletes session from DB; admin deletion cascades sessions
+  - CSRF protection: SameSite=Strict + X-Requested-With header on mutations
+```
+
+### Managing Tenants (Admin UI)
+```
+Admin navigates to /admin (Tenants page)
+  → Search/filter by email, slug, or ID
+  → Filter by status (trial, active, suspended, all)
+  → Click tenant slug → Tenant Detail page
+
+Actions available:
+  Search          GET    /api/hosted/tenants             → List (with filter)
+  View            GET    /api/hosted/tenants/{id}         → Details
+  Edit            PUT    /api/hosted/tenants/{id}         → Update email/slug/status
+  Suspend         POST   /api/hosted/tenants/{id}/suspend  → Scale to 0, mark suspended
+  Activate        POST   /api/hosted/tenants/{id}/activate → Scale to 1, mark active
+  Delete          DELETE /api/hosted/tenants/{id}         → Deprovision + soft-delete
+  Reset API Key   POST   /api/hosted/tenants/{id}/reset-key → New key, re-provision
+  Reset Password  POST   /api/hosted/tenants/{id}/reset-password → Temp password
+  Extend Trial    POST   /api/hosted/tenants/{id}/extend-trial → Add days
+
+All actions are logged to the audit log.
+```
+
+### Managing Admin Users (Super Admin Only)
+```
+Super admin navigates to /admin/users
+  → List all admin users with role, created date, last login
+  → Create new admin (email, password, role: admin/super_admin)
+  → Delete admin (prevents self-deletion and last super_admin deletion)
+
+API:
+  GET    /api/hosted/admin/users         → List admins
+  POST   /api/hosted/admin/users         → Create admin
+  DELETE /api/hosted/admin/users/{id}    → Remove admin
+```
+
+### Audit Log
+```
+Any admin navigates to /admin/audit
+  → View recent admin actions (time, admin, action, target, details)
+  → Paginated (100 entries default)
+
+API:
+  GET    /api/hosted/admin/audit         → List audit logs
+```
+
+### Automation / CI Access (API Key)
+```
+For scripts and CI pipelines, the admin API also accepts the
+HOSTED_ADMIN_API_KEY via X-API-Key or Authorization: Bearer header.
+API key auth is treated as super_admin (full access).
+No session cookie is set for API key auth.
+
+Example:
+  curl -H "X-API-Key: $ADMIN_KEY" https://hosted.lattice.black/api/hosted/tenants
 ```
 
 ---

@@ -62,8 +62,22 @@ spec:
           value: "/data/hosted.db"
         - name: HOSTED_FRONTEND_DIR
           value: "/app/web/hosted"
+        - name: HOSTED_ADMIN_FRONTEND_DIR
+          value: "/app/web/admin"
         - name: HOSTED_BASE_DOMAIN
           value: "lattice.black"
+        - name: HOSTED_BOOTSTRAP_ADMIN_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: lattice-hosted-secrets
+              key: bootstrap-admin-email
+              optional: true
+        - name: HOSTED_BOOTSTRAP_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: lattice-hosted-secrets
+              key: bootstrap-admin-password
+              optional: true
         - name: STRIPE_SECRET_KEY
           valueFrom:
             secretKeyRef:

@@ -11,6 +11,8 @@ web/app/node_modules/
 web/app/dist/
 web/site/node_modules/
 web/site/dist/
+web/admin/node_modules/
+web/admin/dist/
 
 # Embedded frontend build artifacts (generated from web/*/dist)
 internal/web/site/
